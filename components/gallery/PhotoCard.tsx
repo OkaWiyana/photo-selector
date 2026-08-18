@@ -19,6 +19,7 @@ export function PhotoCard({
   onOpenPreview,
   index,
 }: PhotoCardProps) {
+  const [currentSrc, setCurrentSrc] = useState<string>(photo.src);
   const [imageError, setImageError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -26,6 +27,15 @@ export function PhotoCard({
   const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%2327272a"/><text x="50%" y="50%" fill="%23a1a1aa" font-family="sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(
     photo.name
   )}</text></svg>`;
+
+  const handleError = () => {
+    // If direct Google Drive thumbnail URL fails, try falling back to local server proxy route
+    if (currentSrc.startsWith("https://drive.google.com") && photo.id && !photo.id.startsWith("photo-")) {
+      setCurrentSrc(`/api/drive-image/${photo.id}`);
+    } else {
+      setImageError(true);
+    }
+  };
 
   return (
     <div
@@ -44,7 +54,7 @@ export function PhotoCard({
       >
         {/* Image element */}
         <Image
-          src={imageError ? fallbackSvg : photo.src}
+          src={imageError ? fallbackSvg : currentSrc}
           alt={photo.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -52,7 +62,7 @@ export function PhotoCard({
             isLoaded ? "opacity-100" : "opacity-0"
           } ${isSelected ? "brightness-[0.9]" : ""}`}
           onLoad={() => setIsLoaded(true)}
-          onError={() => setImageError(true)}
+          onError={handleError}
           priority={index < 4}
         />
 

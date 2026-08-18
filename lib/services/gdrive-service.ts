@@ -11,7 +11,7 @@ export interface FetchDrivePhotosResult {
  * Initializes Google Drive v3 client using Service Account credentials from environment variables.
  * Note: Credentials must ONLY be accessed server-side.
  */
-function getGoogleDriveClient() {
+export function getGoogleDriveClient() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const rawPrivateKey = process.env.GOOGLE_PRIVATE_KEY;
 
@@ -92,13 +92,10 @@ export async function fetchPhotosFromDriveFolder(
     }
 
     const photos: Photo[] = allFiles.map((file) => {
-      // Construct high-quality 1200px preview thumbnail link
-      let previewSrc = `https://lh3.googleusercontent.com/d/${file.id}=w1200`;
-
-      if (file.thumbnailLink) {
-        // Upgrade default 220px thumbnail to high quality 1200px preview
-        previewSrc = file.thumbnailLink.replace(/=s\d+$/, "=w1200");
-      }
+      // Use permanent Google Drive thumbnail endpoint (never expires, fast, zero server overhead)
+      const previewSrc = file.id
+        ? `https://drive.google.com/thumbnail?id=${file.id}&sz=w1200`
+        : "/icon.png";
 
       const width = file.imageMediaMetadata?.width || 1200;
       const height = file.imageMediaMetadata?.height || 900;
