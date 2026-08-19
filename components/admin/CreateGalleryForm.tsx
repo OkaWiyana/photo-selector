@@ -47,9 +47,15 @@ export function CreateGalleryForm() {
     }
   };
 
-  const fullGalleryUrl = typeof window !== "undefined" && result?.galleryUrl
-    ? `${window.location.origin}${result.galleryUrl}`
-    : result?.galleryUrl || "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
+    : typeof window !== "undefined"
+    ? window.location.origin
+    : "";
+
+  const fullGalleryUrl = result?.galleryUrl
+    ? `${siteUrl}${result.galleryUrl}`
+    : "";
 
   const handleCopyLink = async () => {
     if (!fullGalleryUrl) return;
