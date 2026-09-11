@@ -220,24 +220,34 @@ export async function saveGallerySelection(
 ): Promise<boolean> {
   if (!galleryId || !selectedFilenames || selectedFilenames.length === 0) return false;
 
-  const supabaseAdmin = getSupabaseAdminClient();
-  if (supabaseAdmin) {
+  const supabase = getSupabaseAdminClient() || getSupabaseClient();
+  if (supabase) {
     try {
       const selectionId = `sel_${galleryId}`;
-      const { error } = await supabaseAdmin.from("gallery_selections").upsert({
+      const payload = {
         id: selectionId,
         gallery_id: galleryId,
         selected_filenames: selectedFilenames,
         created_at: new Date().toISOString(),
-      });
+      };
 
-      if (!error) return true;
-    } catch {
-      // ignore warning
+      const { error } = await supabase.from("gallery_selections").upsert(payload);
+
+      if (!error) {
+        console.log(`[Supabase Success] Saved ${selectedFilenames.length} selections for gallery ${galleryId}`);
+        return true;
+      }
+      console.warn("[Supabase Error] saveGallerySelection failed:", error.message, error.details);
+    } catch (err) {
+      console.warn("[Supabase Exception] saveGallerySelection:", err);
     }
+  } else {
+    console.warn("[Supabase] No client initialized. Check NEXT_PUBLIC_SUPABASE_URL in .env.local");
   }
   return false;
 }
+
+
 
 /**
  * Retrieves client selected filenames and gallery metadata for Editor Workspace integration
