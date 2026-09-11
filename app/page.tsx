@@ -27,12 +27,12 @@ export default function Home() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md pt-2">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xl pt-2">
           <Link
             href="/admin"
-            className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-950/40"
+            className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-950/40"
           >
-            <span>Create New Gallery</span>
+            <span>Create Gallery</span>
             <svg
               className="h-4 w-4"
               fill="none"
@@ -49,10 +49,30 @@ export default function Home() {
           </Link>
 
           <Link
-            href="/gallery/demo"
-            className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-medium text-sm transition-all border border-zinc-800"
+            href="/editor"
+            className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-sm transition-all shadow-lg shadow-blue-950/40 font-mono"
           >
-            <span>View Demo Gallery</span>
+            <span>Editor Workspace</span>
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+          </Link>
+
+          <Link
+            href="/gallery/demo"
+            className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-medium text-sm transition-all border border-zinc-800"
+          >
+            <span>Demo Gallery</span>
             <svg
               className="h-4 w-4"
               fill="none"
@@ -68,6 +88,7 @@ export default function Home() {
             </svg>
           </Link>
         </div>
+
 
         {/* Workflow Steps Preview */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mt-6 text-left">

@@ -19,3 +19,12 @@ export async function createGalleryAction(
     whatsappNumber,
   });
 }
+
+export async function saveGallerySelectionAction(
+  galleryId: string,
+  selectedFilenames: string[]
+): Promise<boolean> {
+  const { saveGallerySelection } = await import("@/lib/services/gallery-service");
+  return await saveGallerySelection(galleryId, selectedFilenames);
+}
+

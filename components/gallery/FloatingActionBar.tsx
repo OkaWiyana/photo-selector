@@ -2,8 +2,10 @@
 
 import { generateWhatsAppLink } from "@/lib/utils/whatsapp";
 import { Photo } from "@/lib/types/gallery";
+import { saveGallerySelectionAction } from "@/app/admin/actions";
 
 interface FloatingActionBarProps {
+  galleryId?: string;
   selectedPhotos: Photo[];
   maxSelections: number;
   whatsappNumber: string;
@@ -11,6 +13,7 @@ interface FloatingActionBarProps {
 }
 
 export function FloatingActionBar({
+  galleryId,
   selectedPhotos,
   maxSelections,
   whatsappNumber,
@@ -22,6 +25,12 @@ export function FloatingActionBar({
   const handleSendSelection = () => {
     if (isDisabled) return;
 
+    // Asynchronously persist client selections if galleryId is available
+    if (galleryId) {
+      const selectedNames = selectedPhotos.map((p) => p.name);
+      saveGallerySelectionAction(galleryId, selectedNames).catch(() => {});
+    }
+
     const url = generateWhatsAppLink({
       phone: whatsappNumber,
       clientName,
@@ -30,6 +39,7 @@ export function FloatingActionBar({
 
     window.open(url, "_blank", "noopener,noreferrer");
   };
+
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-30 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800/80 p-4 sm:px-6">
