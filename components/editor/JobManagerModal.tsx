@@ -22,9 +22,18 @@ export function JobManagerModal({
   onClose,
 }: JobManagerModalProps) {
   const [newJobName, setNewJobName] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [deletingJobId, setDeletingJobId] = useState<string | null>(null);
 
   const deletingJob = jobs.find((j) => j.id === deletingJobId);
+
+  const filteredJobs = jobs.filter((job) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const nameMatch = job.name.toLowerCase().includes(q);
+    const clientMatch = job.clientName?.toLowerCase().includes(q);
+    return nameMatch || Boolean(clientMatch);
+  });
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +56,8 @@ export function JobManagerModal({
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Job / Project Workspaces</h3>
-                <p className="text-xs text-zinc-400">Switch or create job sessions stored locally</p>
+                <h3 className="text-lg font-bold text-white">Saved Job Workspaces</h3>
+                <p className="text-xs text-zinc-400">Cari, pilih, atau buat workspace baru</p>
               </div>
             </div>
 
@@ -81,15 +90,41 @@ export function JobManagerModal({
             </button>
           </form>
 
+          {/* Search Saved Jobs input */}
+          {jobs.length > 0 && (
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari job workspace..."
+                className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl pl-9 pr-3 py-2 text-xs text-zinc-200 font-mono focus:outline-none"
+              />
+              <svg
+                className="h-4 w-4 text-zinc-500 absolute left-3 top-2.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          )}
+
           {/* Saved Jobs List */}
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            <div className="text-xs font-mono text-zinc-400 mb-1">Saved Workspaces ({jobs.length})</div>
-            {jobs.length === 0 ? (
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="text-xs font-mono text-zinc-400 mb-1 flex justify-between">
+              <span>Saved Workspaces ({filteredJobs.length})</span>
+              {jobs.length > 0 && <span>Total: {jobs.length}</span>}
+            </div>
+            {filteredJobs.length === 0 ? (
               <div className="p-6 text-center text-xs text-zinc-500 font-mono bg-zinc-950 rounded-xl border border-zinc-800/60">
-                No saved jobs yet. Create one above!
+                {jobs.length === 0
+                  ? "Belum ada job tersimpan. Buat baru di atas!"
+                  : "Tidak ditemukan job yang sesuai pencarian."}
               </div>
             ) : (
-              jobs.map((job) => (
+              filteredJobs.map((job) => (
                 <div
                   key={job.id}
                   className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${

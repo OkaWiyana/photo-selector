@@ -73,21 +73,28 @@ export function EditorWorkspaceContainer({
     setCurrentJob((prev) => ({ ...prev, rawExtensions: exts }));
   }, []);
 
-  // Update initial gallery selection if passed via server props
+  // Update initial gallery selection if passed via server props and auto-save to Saved Jobs
   useEffect(() => {
     if (initialGalleryData && initialGalleryData.selectedFilenames.length > 0) {
       const selections = parseClientSelectionText(
         initialGalleryData.selectedFilenames.join("\n")
       );
-      setCurrentJob((prev) => ({
-        ...prev,
+      const galleryJob: EditingJob = {
+        id: `job_gal_${initialGalleryData.galleryId}`,
+        name: `${initialGalleryData.clientName} Proofing Set`,
         clientName: initialGalleryData.clientName,
         galleryId: initialGalleryData.galleryId,
-        name: `${initialGalleryData.clientName} Proofing Set`,
         clientSelections: selections,
-      }));
+        rawExtensions: currentJob.rawExtensions,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setCurrentJob(galleryJob);
+      saveJobToStorage(galleryJob);
+      setJobs(getSavedJobs());
     }
   }, [initialGalleryData]);
+
 
   // Compute matched photos memoized
   const matchedPhotos: MatchedPhoto[] = useMemo(() => {
