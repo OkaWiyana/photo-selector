@@ -7,16 +7,21 @@ import { parseClientSelectionText } from "@/lib/utils/editor";
 interface ImportSelectionSectionProps {
   selections: ClientSelection[];
   onUpdateSelections: (selections: ClientSelection[], rawText?: string) => void;
-  galleryInfo?: { clientName?: string; title?: string } | null;
+  galleryInfo?: { clientName?: string; title?: string; galleryId?: string } | null;
+  onOpenSupabasePicker?: () => void;
+  onReSyncGallery?: () => void;
 }
 
 export function ImportSelectionSection({
   selections,
   onUpdateSelections,
   galleryInfo,
+  onOpenSupabasePicker,
+  onReSyncGallery,
 }: ImportSelectionSectionProps) {
   const [inputText, setInputText] = useState<string>("");
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   const handleTextChange = (text: string) => {
     setInputText(text);
@@ -45,6 +50,16 @@ export function ImportSelectionSection({
     onUpdateSelections([]);
   };
 
+  const handleSyncClick = async () => {
+    if (!onReSyncGallery) return;
+    setIsSyncing(true);
+    try {
+      await onReSyncGallery();
+    } finally {
+      setTimeout(() => setIsSyncing(false), 600);
+    }
+  };
+
   return (
     <div className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-5 sm:p-6 transition-all">
       {/* Header Bar */}
@@ -65,12 +80,33 @@ export function ImportSelectionSection({
               )}
             </h2>
             <p className="text-xs text-zinc-400">
-              Paste filenames, WhatsApp text, or upload a .txt file
+              Paste filenames, WhatsApp text, upload .txt file, or import from Supabase
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Re-sync Button if gallery ID present */}
+          {galleryInfo?.galleryId && onReSyncGallery && (
+            <button
+              type="button"
+              onClick={handleSyncClick}
+              disabled={isSyncing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-mono font-semibold border border-emerald-500/30 transition-colors"
+              title="Perbarui daftar foto terbaru dari Supabase jika client memilih ulang"
+            >
+              <svg
+                className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Sync Latest</span>
+            </button>
+          )}
+
           {/* Selected Stats Badge */}
           <div className="text-right">
             <div className="text-xs text-zinc-400 font-mono">Selected by Client</div>
@@ -114,7 +150,20 @@ IMG_1288.JPG`}
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Left action buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {onOpenSupabasePicker && (
+                <button
+                  type="button"
+                  onClick={onOpenSupabasePicker}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 hover:text-blue-300 text-xs font-mono transition-colors border border-blue-500/30 font-semibold"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span>Import from Supabase Gallery</span>
+                </button>
+              )}
+
               <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-mono cursor-pointer transition-colors border border-zinc-700/60">
                 <svg className="h-3.5 w-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
