@@ -22,6 +22,7 @@ import { ResultTableSection } from "./ResultTableSection";
 import { CreateSetModal } from "./CreateSetModal";
 import { JobManagerModal } from "./JobManagerModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { SupabaseGalleryPickerModal } from "./SupabaseGalleryPickerModal";
 
 interface EditorWorkspaceContainerProps {
   initialGalleryData?: {
@@ -64,6 +65,7 @@ export function EditorWorkspaceContainer({
   const [showCreateSetModal, setShowCreateSetModal] = useState<boolean>(false);
   const [showJobManagerModal, setShowJobManagerModal] = useState<boolean>(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState<boolean>(false);
+  const [showSupabasePickerModal, setShowSupabasePickerModal] = useState<boolean>(false);
 
   // Load saved jobs & RAW extensions on mount
   useEffect(() => {
@@ -95,7 +97,6 @@ export function EditorWorkspaceContainer({
     }
   }, [initialGalleryData]);
 
-
   // Compute matched photos memoized
   const matchedPhotos: MatchedPhoto[] = useMemo(() => {
     return matchPhotos(
@@ -123,6 +124,42 @@ export function EditorWorkspaceContainer({
     saveJobToStorage(updated);
     setJobs(getSavedJobs());
   };
+
+  const handleImportSupabaseGallery = (data: {
+    galleryId: string;
+    clientName: string;
+    selectedFilenames: string[];
+  }) => {
+    const selections = parseClientSelectionText(data.selectedFilenames.join("\n"));
+    const importedJob: EditingJob = {
+      id: `job_gal_${data.galleryId}`,
+      name: `${data.clientName} Proofing Set`,
+      clientName: data.clientName,
+      galleryId: data.galleryId,
+      clientSelections: selections,
+      rawExtensions: currentJob.rawExtensions,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setCurrentJob(importedJob);
+    saveJobToStorage(importedJob);
+    setJobs(getSavedJobs());
+  };
+
+  const handleReSyncGallery = async () => {
+    if (!currentJob.galleryId) return;
+    const { getGallerySelectionAction } = await import("@/app/admin/actions");
+    const updatedData = await getGallerySelectionAction(currentJob.galleryId);
+    if (updatedData && updatedData.selectedFilenames.length > 0) {
+      handleImportSupabaseGallery({
+        galleryId: currentJob.galleryId,
+        clientName: updatedData.clientName,
+        selectedFilenames: updatedData.selectedFilenames,
+      });
+    }
+  };
+
+
 
   const handleUpdateRawExtensions = (rawExtensions: string[]) => {
     saveRawExtensionsToStorage(rawExtensions);
@@ -204,8 +241,12 @@ export function EditorWorkspaceContainer({
           galleryInfo={{
             clientName: currentJob.clientName,
             title: currentJob.name,
+            galleryId: currentJob.galleryId,
           }}
+          onOpenSupabasePicker={() => setShowSupabasePickerModal(true)}
+          onReSyncGallery={handleReSyncGallery}
         />
+
 
         {/* Section 2 & 3: Select Local Photo Folder */}
         <FolderSelectorSection
@@ -247,6 +288,14 @@ export function EditorWorkspaceContainer({
           onCreateNewJob={handleCreateNewJob}
           onDeleteJob={handleDeleteJob}
           onClose={() => setShowJobManagerModal(false)}
+        />
+      )}
+
+      {/* Supabase Gallery Importer Picker Modal */}
+      {showSupabasePickerModal && (
+        <SupabaseGalleryPickerModal
+          onSelectGallery={handleImportSupabaseGallery}
+          onClose={() => setShowSupabasePickerModal(false)}
         />
       )}
 

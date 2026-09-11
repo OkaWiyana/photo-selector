@@ -223,15 +223,35 @@ export async function saveGallerySelection(
   const supabase = getSupabaseAdminClient() || getSupabaseClient();
   if (supabase) {
     try {
-      const selectionId = `sel_${galleryId}`;
-      const payload = {
-        id: selectionId,
-        gallery_id: galleryId,
-        selected_filenames: selectedFilenames,
-        created_at: new Date().toISOString(),
-      };
+      // Check if a selection record already exists for this gallery_id
+      const { data: existing } = await supabase
+        .from("gallery_selections")
+        .select("id")
+        .eq("gallery_id", galleryId)
+        .maybeSingle();
 
-      const { error } = await supabase.from("gallery_selections").upsert(payload);
+      let error = null;
+
+      if (existing) {
+        // Update existing record
+        const res = await supabase
+          .from("gallery_selections")
+          .update({
+            selected_filenames: selectedFilenames,
+            created_at: new Date().toISOString(),
+          })
+          .eq("gallery_id", galleryId);
+        error = res.error;
+      } else {
+        // Insert new record
+        const res = await supabase.from("gallery_selections").insert({
+          id: `sel_${galleryId}`,
+          gallery_id: galleryId,
+          selected_filenames: selectedFilenames,
+          created_at: new Date().toISOString(),
+        });
+        error = res.error;
+      }
 
       if (!error) {
         console.log(`[Supabase Success] Saved ${selectedFilenames.length} selections for gallery ${galleryId}`);
@@ -246,6 +266,7 @@ export async function saveGallerySelection(
   }
   return false;
 }
+
 
 
 
@@ -285,4 +306,57 @@ export async function getGallerySelection(galleryId: string): Promise<{
     selectedFilenames,
   };
 }
+
+export interface GallerySelectionSummary {
+  id: string;
+  clientName: string;
+  maxSelections: number;
+  createdAt?: string;
+  selectedFilenames: string[];
+}
+
+/**
+ * Retrieves list of all created galleries with client selections for Editor Workspace picker
+ */
+export async function getAllGalleriesWithSelections(): Promise<GallerySelectionSummary[]> {
+  const supabase = getSupabaseClient() || getSupabaseAdminClient();
+  const list: GallerySelectionSummary[] = [];
+
+  if (supabase) {
+    try {
+      const { data: galleries } = await supabase
+        .from("galleries")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (galleries && galleries.length > 0) {
+        const { data: selections } = await supabase
+          .from("gallery_selections")
+          .select("*");
+
+        const selectionsMap = new Map<string, string[]>();
+        if (selections) {
+          for (const s of selections) {
+            selectionsMap.set(s.gallery_id, s.selected_filenames as string[]);
+          }
+        }
+
+        for (const g of galleries) {
+          list.push({
+            id: g.id,
+            clientName: g.client_name,
+            maxSelections: g.max_selections,
+            createdAt: g.created_at,
+            selectedFilenames: selectionsMap.get(g.id) || [],
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Failed fetching galleries with selections:", err);
+    }
+  }
+
+  return list;
+}
+
 

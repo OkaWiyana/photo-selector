@@ -28,3 +28,15 @@ export async function saveGallerySelectionAction(
   return await saveGallerySelection(galleryId, selectedFilenames);
 }
 
+export async function fetchGalleriesWithSelectionsAction() {
+  const { getAllGalleriesWithSelections } = await import("@/lib/services/gallery-service");
+  return await getAllGalleriesWithSelections();
+}
+
+export async function getGallerySelectionAction(galleryId: string) {
+  const { getGallerySelection } = await import("@/lib/services/gallery-service");
+  return await getGallerySelection(galleryId);
+}
+
+
+
