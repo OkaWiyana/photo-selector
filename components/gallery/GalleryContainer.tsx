@@ -95,11 +95,13 @@ export function GalleryContainer({ gallery }: GalleryContainerProps) {
 
       {/* Floating Action Bar */}
       <FloatingActionBar
+        galleryId={gallery.id}
         selectedPhotos={selectedPhotos}
         maxSelections={gallery.maxSelections}
         whatsappNumber={gallery.whatsappNumber}
         clientName={gallery.clientName}
       />
+
     </div>
   );
 }

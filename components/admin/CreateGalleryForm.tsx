@@ -138,22 +138,33 @@ export function CreateGalleryForm() {
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full mt-4">
             <Link
               href={result.galleryUrl}
-              className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-950/30"
+              className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-xs transition-all shadow-lg shadow-emerald-950/30"
             >
-              <span>Open Client Gallery</span>
+              <span>Open Gallery</span>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </Link>
+
+            <Link
+              href={`/editor?gallery=${result.galleryId}`}
+              className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all shadow-lg shadow-blue-950/30 font-mono"
+            >
+              <span>Open in Editor</span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </Link>
 
             <button
               type="button"
               onClick={handleCreateAnother}
-              className="w-full sm:flex-1 inline-flex items-center justify-center px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-medium text-sm transition-all border border-zinc-700"
+              className="w-full sm:flex-1 inline-flex items-center justify-center px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-medium text-xs transition-all border border-zinc-700"
             >
-              Create Another Gallery
+              Create Another
             </button>
           </div>
+
         </div>
       </div>
     );

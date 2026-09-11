@@ -210,3 +210,69 @@ export async function createGalleryConfig(
     galleryUrl: `/gallery/${galleryId}`,
   };
 }
+
+/**
+ * Saves client selected photo filenames for a specific gallery ID to Supabase (or memory store)
+ */
+export async function saveGallerySelection(
+  galleryId: string,
+  selectedFilenames: string[]
+): Promise<boolean> {
+  if (!galleryId || !selectedFilenames || selectedFilenames.length === 0) return false;
+
+  const supabaseAdmin = getSupabaseAdminClient();
+  if (supabaseAdmin) {
+    try {
+      const selectionId = `sel_${galleryId}`;
+      const { error } = await supabaseAdmin.from("gallery_selections").upsert({
+        id: selectionId,
+        gallery_id: galleryId,
+        selected_filenames: selectedFilenames,
+        created_at: new Date().toISOString(),
+      });
+
+      if (!error) return true;
+    } catch {
+      // ignore warning
+    }
+  }
+  return false;
+}
+
+/**
+ * Retrieves client selected filenames and gallery metadata for Editor Workspace integration
+ */
+export async function getGallerySelection(galleryId: string): Promise<{
+  clientName: string;
+  galleryTitle: string;
+  selectedFilenames: string[];
+} | null> {
+  const result = await getGalleryWithPhotos(galleryId);
+  if (!result.gallery) return null;
+
+  let selectedFilenames: string[] = [];
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data } = await supabase
+        .from("gallery_selections")
+        .select("selected_filenames")
+        .eq("gallery_id", galleryId)
+        .maybeSingle();
+
+      if (data && data.selected_filenames) {
+        selectedFilenames = data.selected_filenames as string[];
+      }
+    } catch {
+      // ignore error
+    }
+  }
+
+  return {
+    clientName: result.gallery.clientName,
+    galleryTitle: result.gallery.title,
+    selectedFilenames,
+  };
+}
+

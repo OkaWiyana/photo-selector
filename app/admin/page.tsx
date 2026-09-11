@@ -23,12 +23,25 @@ export default function AdminPage() {
             <span>Back to Home</span>
           </Link>
 
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Photographer Admin
+          <div className="flex items-center gap-4">
+            <Link
+              href="/editor"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-mono font-semibold border border-emerald-500/30 transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>Editor Workspace</span>
+            </Link>
+
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Photographer Admin
+            </div>
           </div>
         </div>
       </header>
+
 
       {/* Main Admin Content */}
       <main className="flex-1 mx-auto w-full max-w-4xl p-4 sm:p-8 flex flex-col items-center justify-center">
