@@ -11,12 +11,14 @@ export async function createGalleryAction(
   const driveUrl = formData.get("driveUrl") as string;
   const maxSelections = formData.get("maxSelections") as string;
   const whatsappNumber = formData.get("whatsappNumber") as string;
+  const clientWhatsappNumber = formData.get("clientWhatsappNumber") as string;
 
   return await createGalleryConfig({
     clientName,
     driveUrl,
     maxSelections: Number(maxSelections),
     whatsappNumber,
+    clientWhatsappNumber,
   });
 }
 

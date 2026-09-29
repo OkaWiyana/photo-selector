@@ -14,6 +14,7 @@ export interface Gallery {
   driveFolderId: string;
   maxSelections: number;
   whatsappNumber: string;
+  clientWhatsappNumber?: string;
   photos: Photo[];
   createdAt?: string;
 }
@@ -24,6 +25,7 @@ export interface SupabaseGalleryRow {
   drive_folder_id: string;
   max_selections: number;
   whatsapp_number: string;
+  client_whatsapp_number?: string;
   created_at?: string;
 }
 
@@ -32,6 +34,7 @@ export interface CreateGalleryInput {
   driveUrl: string;
   maxSelections: number;
   whatsappNumber: string;
+  clientWhatsappNumber?: string;
 }
 
 export interface CreateGalleryResult {
@@ -41,10 +44,13 @@ export interface CreateGalleryResult {
     driveUrl?: string;
     maxSelections?: string;
     whatsappNumber?: string;
+    clientWhatsappNumber?: string;
     form?: string;
   };
   galleryId?: string;
   galleryUrl?: string;
+  driveUrl?: string;
+  clientWhatsappNumber?: string;
 }
 
 export interface WhatsAppMessageParams {
