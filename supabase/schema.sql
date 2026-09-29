@@ -10,8 +10,12 @@ CREATE TABLE IF NOT EXISTS galleries (
   drive_folder_id TEXT NOT NULL,
   max_selections INTEGER NOT NULL DEFAULT 10,
   whatsapp_number TEXT NOT NULL,
+  client_whatsapp_number TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration for existing galleries table:
+-- ALTER TABLE galleries ADD COLUMN IF NOT EXISTS client_whatsapp_number TEXT;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE galleries ENABLE ROW LEVEL SECURITY;

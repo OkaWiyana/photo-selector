@@ -4,6 +4,7 @@ import { saveGalleryToStore, getGalleryFromStore } from "@/lib/data/gallery-stor
 import { extractDriveFolderId } from "@/lib/utils/gdrive";
 import { fetchPhotosFromDriveFolder, FetchDrivePhotosResult } from "@/lib/services/gdrive-service";
 import { getSupabaseClient, getSupabaseAdminClient } from "@/lib/supabase/server";
+import { formatPhoneNumberForWhatsApp } from "@/lib/utils/whatsapp";
 
 export interface GetGalleryWithPhotosResult {
   gallery: Gallery | null;
@@ -48,6 +49,7 @@ export async function getGalleryWithPhotos(id: string): Promise<GetGalleryWithPh
           driveFolderId: row.drive_folder_id,
           maxSelections: row.max_selections,
           whatsappNumber: row.whatsapp_number,
+          clientWhatsappNumber: row.client_whatsapp_number || undefined,
           createdAt: row.created_at,
           photos: [],
         };
@@ -154,13 +156,20 @@ export async function createGalleryConfig(
     errors.maxSelections = "Maximum selections must be a positive integer (e.g. 10).";
   }
 
-  // Validate WhatsApp Number
+  // Validate WhatsApp Number (Photographer)
   const rawPhone = input.whatsappNumber?.trim() || "";
-  const cleanPhone = rawPhone.replace(/\D/g, "");
+  const cleanPhone = rawPhone ? formatPhoneNumberForWhatsApp(rawPhone) : "";
   if (!rawPhone) {
     errors.whatsappNumber = "Photographer WhatsApp number is required.";
   } else if (cleanPhone.length < 8) {
     errors.whatsappNumber = "Please enter a valid WhatsApp number (at least 8 digits).";
+  }
+
+  // Optional Client WhatsApp Number
+  const rawClientPhone = input.clientWhatsappNumber?.trim() || "";
+  const cleanClientPhone = rawClientPhone ? formatPhoneNumberForWhatsApp(rawClientPhone) : "";
+  if (rawClientPhone && cleanClientPhone.length < 8) {
+    errors.clientWhatsappNumber = "Please enter a valid WhatsApp number for the client (at least 8 digits).";
   }
 
   if (Object.keys(errors).length > 0) {
@@ -181,6 +190,7 @@ export async function createGalleryConfig(
     driveFolderId: driveFolderId!,
     maxSelections,
     whatsappNumber: cleanPhone,
+    clientWhatsappNumber: cleanClientPhone || undefined,
     photos: [],
     createdAt: new Date().toISOString(),
   };
@@ -194,6 +204,7 @@ export async function createGalleryConfig(
       drive_folder_id: driveFolderId!,
       max_selections: maxSelections,
       whatsapp_number: cleanPhone,
+      client_whatsapp_number: cleanClientPhone || null,
     });
 
     if (dbError) {
@@ -208,6 +219,8 @@ export async function createGalleryConfig(
     success: true,
     galleryId,
     galleryUrl: `/gallery/${galleryId}`,
+    driveUrl,
+    clientWhatsappNumber: cleanClientPhone || undefined,
   };
 }
 
