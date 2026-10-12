@@ -40,5 +40,24 @@ export async function getGallerySelectionAction(galleryId: string) {
   return await getGallerySelection(galleryId);
 }
 
+export async function updateGalleryAction(
+  id: string,
+  input: {
+    clientName?: string;
+    driveUrl?: string;
+    maxSelections?: number;
+    whatsappNumber?: string;
+    clientWhatsappNumber?: string;
+  }
+) {
+  const { updateGalleryConfig } = await import("@/lib/services/gallery-service");
+  return await updateGalleryConfig(id, input);
+}
+
+export async function deleteGalleryAction(id: string) {
+  const { deleteGalleryConfig } = await import("@/lib/services/gallery-service");
+  return await deleteGalleryConfig(id);
+}
+
 
 

@@ -49,7 +49,9 @@ export function CreateGalleryForm() {
       if (res.clientWhatsappNumber) {
         setEditableClientWa(res.clientWhatsappNumber);
       } else if (formData.clientWhatsappNumber) {
-        setEditableClientWa(formatPhoneNumberForWhatsApp(formData.clientWhatsappNumber));
+        setEditableClientWa(
+          formatPhoneNumberForWhatsApp(formData.clientWhatsappNumber),
+        );
       }
     } catch {
       setResult({
@@ -64,14 +66,15 @@ export function CreateGalleryForm() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
     ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
     : typeof window !== "undefined"
-    ? window.location.origin
-    : "";
+      ? window.location.origin
+      : "";
 
   const fullGalleryUrl = result?.galleryUrl
     ? `${siteUrl}${result.galleryUrl}`
     : "";
 
-  const currentDriveUrl = result?.driveUrl || formData.driveUrl || "[Link G-Drive Kakak]";
+  const currentDriveUrl =
+    result?.driveUrl || formData.driveUrl || "[Link G-Drive Kakak]";
 
   // Format client invitation chat text
   const clientChatMessage = formatClientInvitationMessage({
@@ -102,7 +105,10 @@ export function CreateGalleryForm() {
   };
 
   const handleSendToClientWa = () => {
-    const targetPhone = editableClientWa || result?.clientWhatsappNumber || formData.clientWhatsappNumber;
+    const targetPhone =
+      editableClientWa ||
+      result?.clientWhatsappNumber ||
+      formData.clientWhatsappNumber;
     if (!targetPhone) {
       alert("Silakan masukkan No. WA Klien terlebih dahulu.");
       return;
@@ -133,8 +139,18 @@ export function CreateGalleryForm() {
       <div className="w-full max-w-xl mx-auto bg-zinc-900 border border-emerald-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl animate-in fade-in duration-200 flex flex-col gap-6">
         <div className="flex flex-col items-center text-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="h-7 w-7"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
 
@@ -146,7 +162,8 @@ export function CreateGalleryForm() {
               Shareable Gallery Link Ready
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-md">
-              Send this unique link to your client so they can select photos up to their limit.
+              Send this unique link to your client so they can select photos up
+              to their limit.
             </p>
           </div>
 
@@ -159,7 +176,7 @@ export function CreateGalleryForm() {
             <button
               type="button"
               onClick={handleCopyLink}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 copiedLink
                   ? "bg-emerald-500 text-white"
                   : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-white"
@@ -167,15 +184,35 @@ export function CreateGalleryForm() {
             >
               {copiedLink ? (
                 <>
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                   <span>Copy Link</span>
                 </>
@@ -190,16 +227,24 @@ export function CreateGalleryForm() {
             <div className="flex items-center gap-2">
               <span className="text-emerald-400 text-lg">💬</span>
               <div>
-                <h3 className="text-sm font-bold text-white leading-tight">Template Chat WhatsApp Klien</h3>
-                <p className="text-[11px] text-zinc-400">Pesan ini otomatis menyertakan Link G-Drive & Portal Pemilihan Foto</p>
+                <h3 className="text-sm font-bold text-white leading-tight">
+                  WhatsApp Client Chat Templates
+                </h3>
+                <p className="text-[11px] text-zinc-400">
+                  This message automatically includes the G-Drive Link & Photo
+                  Selection Portal
+                </p>
               </div>
             </div>
           </div>
 
           {/* Client WA Number Input field on Success Card */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="editableWa" className="text-[11px] font-mono font-semibold text-zinc-300 uppercase tracking-wide">
-              No. WA Klien:
+            <label
+              htmlFor="editableWa"
+              className="text-[11px] font-mono font-semibold text-zinc-300 uppercase tracking-wide"
+            >
+              Client Number:
             </label>
             <div className="flex gap-2">
               <input
@@ -228,7 +273,7 @@ export function CreateGalleryForm() {
               <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                 <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
               </svg>
-              <span>Kirim Chat ke WA Klien</span>
+              <span>Send Chat to Client's</span>
             </button>
 
             <button
@@ -242,17 +287,37 @@ export function CreateGalleryForm() {
             >
               {copiedTemplate ? (
                 <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
-                  <span>Template Tersalin!</span>
+                  <span>Template Copied!</span>
                 </>
               ) : (
                 <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
-                  <span>Salin Template Chat</span>
+                  <span>Copy Template</span>
                 </>
               )}
             </button>
@@ -266,8 +331,18 @@ export function CreateGalleryForm() {
             className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs transition-all border border-zinc-700"
           >
             <span>Open Gallery</span>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
             </svg>
           </Link>
 
@@ -276,8 +351,18 @@ export function CreateGalleryForm() {
             className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-all shadow-lg shadow-blue-950/30 font-mono"
           >
             <span>Open in Editor</span>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
           </Link>
 
@@ -310,8 +395,18 @@ export function CreateGalleryForm() {
       {/* Form Error Banner */}
       {errors?.form && (
         <div className="rounded-xl bg-red-950/60 border border-red-500/30 p-3.5 text-red-300 text-xs flex items-center gap-2">
-          <svg className="h-4 w-4 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="h-4 w-4 text-red-400 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <span>{errors.form}</span>
         </div>
@@ -319,14 +414,17 @@ export function CreateGalleryForm() {
 
       {/* Client Name Input */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="clientName" className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
+        <label
+          htmlFor="clientName"
+          className="text-xs font-semibold text-zinc-300 uppercase tracking-wide"
+        >
           Client Name <span className="text-emerald-400">*</span>
         </label>
         <input
           id="clientName"
           name="clientName"
           type="text"
-          placeholder="e.g. Sarah & David Wedding"
+          placeholder="e.g. Sarah & David"
           value={formData.clientName}
           onChange={handleChange}
           className={`w-full rounded-xl bg-zinc-950 border px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none transition-all ${
@@ -342,7 +440,10 @@ export function CreateGalleryForm() {
 
       {/* Google Drive Folder URL Input */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="driveUrl" className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
+        <label
+          htmlFor="driveUrl"
+          className="text-xs font-semibold text-zinc-300 uppercase tracking-wide"
+        >
           Google Drive Folder URL <span className="text-emerald-400">*</span>
         </label>
         <input
@@ -362,7 +463,8 @@ export function CreateGalleryForm() {
           <span className="text-xs text-red-400">{errors.driveUrl}</span>
         ) : (
           <span className="text-[11px] text-zinc-500 font-mono">
-            Paste the shared Google Drive folder URL containing the client photo previews.
+            Paste the shared Google Drive folder URL containing the client photo
+            previews.
           </span>
         )}
       </div>
@@ -371,7 +473,10 @@ export function CreateGalleryForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Maximum Photos */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="maxSelections" className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
+          <label
+            htmlFor="maxSelections"
+            className="text-xs font-semibold text-zinc-300 uppercase tracking-wide"
+          >
             Max Photos Limit <span className="text-emerald-400">*</span>
           </label>
           <input
@@ -396,8 +501,11 @@ export function CreateGalleryForm() {
 
         {/* WhatsApp Number (Photographer) */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="whatsappNumber" className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
-            No. WA Fotografer <span className="text-emerald-400">*</span>
+          <label
+            htmlFor="whatsappNumber"
+            className="text-xs font-semibold text-zinc-300 uppercase tracking-wide"
+          >
+            Photographer's Number <span className="text-emerald-400">*</span>
           </label>
           <input
             id="whatsappNumber"
@@ -413,23 +521,32 @@ export function CreateGalleryForm() {
             }`}
           />
           {errors?.whatsappNumber ? (
-            <span className="text-xs text-red-400">{errors.whatsappNumber}</span>
+            <span className="text-xs text-red-400">
+              {errors.whatsappNumber}
+            </span>
           ) : (
-            <span className="text-[11px] text-zinc-500">Nomor WA penerima daftar foto pilihan client.</span>
+            <span className="text-[11px] text-zinc-500">
+              WhatsApp number of the recipient for the client's list of selected
+              photos.
+            </span>
           )}
         </div>
       </div>
 
       {/* Client WhatsApp Number Field (Optional) */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="clientWhatsappNumber" className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
-          No. WA Klien <span className="text-zinc-500 font-normal">(Opsional)</span>
+        <label
+          htmlFor="clientWhatsappNumber"
+          className="text-xs font-semibold text-zinc-300 uppercase tracking-wide"
+        >
+          Client Number{" "}
+          <span className="text-zinc-500 font-normal">(Optional)</span>
         </label>
         <input
           id="clientWhatsappNumber"
           name="clientWhatsappNumber"
           type="tel"
-          placeholder="e.g. 08123456789 atau 628123456789"
+          placeholder="e.g. 08123456789 or 628123456789"
           value={formData.clientWhatsappNumber}
           onChange={handleChange}
           className={`w-full rounded-xl bg-zinc-950 border px-4 py-3 text-sm text-white placeholder-zinc-500 font-mono text-xs focus:outline-none transition-all ${
@@ -439,10 +556,13 @@ export function CreateGalleryForm() {
           }`}
         />
         {errors?.clientWhatsappNumber ? (
-          <span className="text-xs text-red-400">{errors.clientWhatsappNumber}</span>
+          <span className="text-xs text-red-400">
+            {errors.clientWhatsappNumber}
+          </span>
         ) : (
           <span className="text-[11px] text-zinc-500 font-mono">
-            Jika diisi, template chat berisi link G-Drive & link portal gallery dapat langsung dikirim ke WhatsApp klien.
+            If filled, the chat template containing the G-Drive link & portal
+            gallery link can be sent directly to the client's WhatsApp.
           </span>
         )}
       </div>
@@ -459,9 +579,24 @@ export function CreateGalleryForm() {
       >
         {loading ? (
           <>
-            <svg className="h-4 w-4 animate-spin text-zinc-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <svg
+              className="h-4 w-4 animate-spin text-zinc-400"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
             <span>Creating Gallery...</span>
           </>
@@ -472,4 +607,3 @@ export function CreateGalleryForm() {
     </form>
   );
 }
-
