@@ -33,6 +33,13 @@ export function EditorHeader({
             <span>Admin</span>
           </Link>
           <span className="text-zinc-700 text-xs">/</span>
+          <Link
+            href="/admin/dashboard"
+            className="text-zinc-400 hover:text-white text-xs font-mono transition-colors"
+          >
+            Dashboard
+          </Link>
+          <span className="text-zinc-700 text-xs">/</span>
           <div className="flex items-center gap-2 text-xs font-mono font-semibold text-emerald-400 uppercase tracking-wider">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             Editor Workspace

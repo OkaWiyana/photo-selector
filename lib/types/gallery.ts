@@ -53,6 +53,13 @@ export interface CreateGalleryResult {
   clientWhatsappNumber?: string;
 }
 
+export interface UpdateGalleryInput {
+  clientName?: string;
+  maxSelections?: number;
+  whatsappNumber?: string;
+  clientWhatsappNumber?: string;
+}
+
 export interface WhatsAppMessageParams {
   phone: string;
   clientName?: string;

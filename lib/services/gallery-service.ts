@@ -1,6 +1,15 @@
 import { Gallery, CreateGalleryInput, CreateGalleryResult, SupabaseGalleryRow } from "@/lib/types/gallery";
 import { MOCK_GALLERY } from "@/lib/data/mock-gallery";
-import { saveGalleryToStore, getGalleryFromStore } from "@/lib/data/gallery-store";
+import {
+  saveGalleryToStore,
+  getGalleryFromStore,
+  getAllGalleriesFromStore,
+  saveSelectionToStore,
+  getSelectionFromStore,
+  getAllSelectionsFromStore,
+  deleteGalleryFromStore,
+  updateGalleryInStore,
+} from "@/lib/data/gallery-store";
 import { extractDriveFolderId } from "@/lib/utils/gdrive";
 import { fetchPhotosFromDriveFolder, FetchDrivePhotosResult } from "@/lib/services/gdrive-service";
 import { getSupabaseClient, getSupabaseAdminClient } from "@/lib/supabase/server";
@@ -233,6 +242,9 @@ export async function saveGallerySelection(
 ): Promise<boolean> {
   if (!galleryId || !selectedFilenames || selectedFilenames.length === 0) return false;
 
+  // Always persist to local runtime memory store as immediate fallback
+  saveSelectionToStore(galleryId, selectedFilenames);
+
   const supabase = getSupabaseAdminClient() || getSupabaseClient();
   if (supabase) {
     try {
@@ -275,13 +287,10 @@ export async function saveGallerySelection(
       console.warn("[Supabase Exception] saveGallerySelection:", err);
     }
   } else {
-    console.warn("[Supabase] No client initialized. Check NEXT_PUBLIC_SUPABASE_URL in .env.local");
+    console.warn("[Supabase] No client initialized. Saved selection to local memory store.");
   }
-  return false;
+  return true;
 }
-
-
-
 
 /**
  * Retrieves client selected filenames and gallery metadata for Editor Workspace integration
@@ -313,6 +322,14 @@ export async function getGallerySelection(galleryId: string): Promise<{
     }
   }
 
+  // Fallback to local memory store if not found in Supabase
+  if (selectedFilenames.length === 0) {
+    const memSelection = getSelectionFromStore(galleryId);
+    if (memSelection) {
+      selectedFilenames = memSelection.selectedFilenames;
+    }
+  }
+
   return {
     clientName: result.gallery.clientName,
     galleryTitle: result.gallery.title,
@@ -323,18 +340,25 @@ export async function getGallerySelection(galleryId: string): Promise<{
 export interface GallerySelectionSummary {
   id: string;
   clientName: string;
+  title: string;
+  driveFolderId: string;
   maxSelections: number;
+  whatsappNumber: string;
+  clientWhatsappNumber?: string;
   createdAt?: string;
   selectedFilenames: string[];
+  updatedAt?: string;
+  status: "completed" | "pending";
 }
 
 /**
- * Retrieves list of all created galleries with client selections for Editor Workspace picker
+ * Retrieves list of all created galleries with client selections for Photographer Dashboard
  */
 export async function getAllGalleriesWithSelections(): Promise<GallerySelectionSummary[]> {
   const supabase = getSupabaseClient() || getSupabaseAdminClient();
-  const list: GallerySelectionSummary[] = [];
+  const summaryMap = new Map<string, GallerySelectionSummary>();
 
+  // 1. Fetch from Supabase if available
   if (supabase) {
     try {
       const { data: galleries } = await supabase
@@ -347,29 +371,164 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
           .from("gallery_selections")
           .select("*");
 
-        const selectionsMap = new Map<string, string[]>();
+        const selectionsMap = new Map<string, { filenames: string[]; updatedAt?: string }>();
         if (selections) {
           for (const s of selections) {
-            selectionsMap.set(s.gallery_id, s.selected_filenames as string[]);
+            selectionsMap.set(s.gallery_id, {
+              filenames: (s.selected_filenames as string[]) || [],
+              updatedAt: s.created_at,
+            });
           }
         }
 
         for (const g of galleries) {
-          list.push({
+          const sel = selectionsMap.get(g.id);
+          const filenames = sel?.filenames || [];
+          summaryMap.set(g.id, {
             id: g.id,
             clientName: g.client_name,
+            title: `${g.client_name} Photo Proofing`,
+            driveFolderId: g.drive_folder_id,
             maxSelections: g.max_selections,
+            whatsappNumber: g.whatsapp_number,
+            clientWhatsappNumber: g.client_whatsapp_number || undefined,
             createdAt: g.created_at,
-            selectedFilenames: selectionsMap.get(g.id) || [],
+            selectedFilenames: filenames,
+            updatedAt: sel?.updatedAt,
+            status: filenames.length > 0 ? "completed" : "pending",
           });
         }
       }
     } catch (err) {
-      console.warn("Failed fetching galleries with selections:", err);
+      console.warn("Failed fetching galleries from Supabase (falling back to memory store):", err);
     }
   }
 
-  return list;
+  // 2. Fallback / Merge with in-memory store (ensures dev runtime and demo data are always visible)
+  const memoryGalleries = getAllGalleriesFromStore();
+  const memorySelections = getAllSelectionsFromStore();
+
+  for (const g of memoryGalleries) {
+    if (!summaryMap.has(g.id)) {
+      const memSel = memorySelections.get(g.id);
+      const filenames = memSel?.selectedFilenames || [];
+      summaryMap.set(g.id, {
+        id: g.id,
+        clientName: g.clientName,
+        title: g.title || `${g.clientName} Photo Proofing`,
+        driveFolderId: g.driveFolderId,
+        maxSelections: g.maxSelections,
+        whatsappNumber: g.whatsappNumber,
+        clientWhatsappNumber: g.clientWhatsappNumber,
+        createdAt: g.createdAt || new Date().toISOString(),
+        selectedFilenames: filenames,
+        updatedAt: memSel?.updatedAt,
+        status: filenames.length > 0 ? "completed" : "pending",
+      });
+    }
+  }
+
+  // Return array sorted by creation date descending
+  return Array.from(summaryMap.values()).sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
+}
+
+/**
+ * Updates an existing gallery configuration (e.g. client name, drive folder URL, max selections, whatsapp numbers)
+ */
+export async function updateGalleryConfig(
+  id: string,
+  input: {
+    clientName?: string;
+    driveUrl?: string;
+    maxSelections?: number;
+    whatsappNumber?: string;
+    clientWhatsappNumber?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  if (!id) return { success: false, error: "Gallery ID is required" };
+
+  const updates: Record<string, unknown> = {};
+  let newDriveFolderId: string | undefined = undefined;
+
+  if (input.clientName !== undefined && input.clientName.trim()) {
+    updates.client_name = input.clientName.trim();
+  }
+  if (input.driveUrl !== undefined && input.driveUrl.trim()) {
+    const extractedId = extractDriveFolderId(input.driveUrl.trim());
+    if (extractedId) {
+      newDriveFolderId = extractedId;
+      updates.drive_folder_id = extractedId;
+    }
+  }
+  if (input.maxSelections !== undefined && !isNaN(input.maxSelections) && input.maxSelections > 0) {
+    updates.max_selections = Number(input.maxSelections);
+  }
+  if (input.whatsappNumber !== undefined && input.whatsappNumber.trim()) {
+    updates.whatsapp_number = formatPhoneNumberForWhatsApp(input.whatsappNumber.trim());
+  }
+  if (input.clientWhatsappNumber !== undefined) {
+    const raw = input.clientWhatsappNumber.trim();
+    updates.client_whatsapp_number = raw ? formatPhoneNumberForWhatsApp(raw) : null;
+  }
+
+  // Update memory store
+  updateGalleryInStore(id, {
+    clientName: input.clientName?.trim(),
+    driveFolderId: newDriveFolderId,
+    maxSelections: input.maxSelections ? Number(input.maxSelections) : undefined,
+    whatsappNumber: input.whatsappNumber ? formatPhoneNumberForWhatsApp(input.whatsappNumber.trim()) : undefined,
+    clientWhatsappNumber:
+      input.clientWhatsappNumber !== undefined
+        ? input.clientWhatsappNumber.trim()
+          ? formatPhoneNumberForWhatsApp(input.clientWhatsappNumber.trim())
+          : undefined
+        : undefined,
+  });
+
+  // Update Supabase if available
+  const supabase = getSupabaseAdminClient() || getSupabaseClient();
+  if (supabase && Object.keys(updates).length > 0) {
+    try {
+      const { error } = await supabase.from("galleries").update(updates).eq("id", id);
+      if (error) {
+        console.warn("Supabase update error:", error.message);
+      }
+    } catch (err) {
+      console.warn("Supabase update exception:", err);
+    }
+  }
+
+  return { success: true };
+}
+
+/**
+ * Deletes a gallery configuration and its client selections
+ */
+export async function deleteGalleryConfig(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!id) return { success: false, error: "Gallery ID is required" };
+
+  // Delete from memory store
+  deleteGalleryFromStore(id);
+
+  // Delete from Supabase if available
+  const supabase = getSupabaseAdminClient() || getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from("gallery_selections").delete().eq("gallery_id", id);
+      const { error } = await supabase.from("galleries").delete().eq("id", id);
+      if (error) {
+        console.warn("Supabase delete error:", error.message);
+      }
+    } catch (err) {
+      console.warn("Supabase delete exception:", err);
+    }
+  }
+
+  return { success: true };
 }
 
 
