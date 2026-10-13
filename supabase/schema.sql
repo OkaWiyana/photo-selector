@@ -75,6 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_shared_selections_gallery_id
   ON shared_selections (gallery_id);
 
 ALTER TABLE shared_selections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared_selections REPLICA IDENTITY FULL;
 
 CREATE POLICY "shared_selections_select"
   ON shared_selections FOR SELECT

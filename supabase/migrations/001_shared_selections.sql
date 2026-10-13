@@ -21,8 +21,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_shared_selections_gallery_photo
 CREATE INDEX IF NOT EXISTS idx_shared_selections_gallery_id
   ON shared_selections (gallery_id);
 
--- 2. Enable Row Level Security
+-- 2. Enable Row Level Security and Full Replica Identity for Realtime DELETE events
 ALTER TABLE shared_selections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shared_selections REPLICA IDENTITY FULL;
 
 -- RLS: Allow public read access scoped to valid galleries
 CREATE POLICY "shared_selections_select"
