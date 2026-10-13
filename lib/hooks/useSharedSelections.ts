@@ -122,7 +122,49 @@ export function useSharedSelections({
 
     const channelName = `shared_selections:${galleryId}`;
     const channel = supabase
-      .channel(channelName)
+      .channel(channelName, {
+        config: {
+          broadcast: { self: false },
+        },
+      })
+      .on(
+        "broadcast",
+        { event: "selection_toggled" },
+        (payload: { payload: { action: string; photo_id: string; photo_name: string } }) => {
+          if (!mountedRef.current) return;
+          const { action, photo_id, photo_name } = payload.payload || {};
+          if (!photo_id) return;
+
+          if (inFlightRef.current.has(photo_id)) {
+            inFlightRef.current.delete(photo_id);
+            return;
+          }
+
+          if (action === "deselected") {
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              next.delete(photo_id);
+              return next;
+            });
+            setSelectedPhotos((prev) => {
+              const next = new Map(prev);
+              next.delete(photo_id);
+              return next;
+            });
+          } else if (action === "selected") {
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              next.add(photo_id);
+              return next;
+            });
+            setSelectedPhotos((prev) => {
+              const next = new Map(prev);
+              next.set(photo_id, photo_name);
+              return next;
+            });
+          }
+        }
+      )
       .on(
         "postgres_changes" as "system", // Type workaround for Supabase SDK
         {
@@ -133,7 +175,8 @@ export function useSharedSelections({
         } as Record<string, unknown>,
         (payload: { new: { photo_id: string; photo_name: string; selected_at: string } }) => {
           if (!mountedRef.current) return;
-          const { photo_id, photo_name } = payload.new;
+          const { photo_id, photo_name } = payload.new || {};
+          if (!photo_id) return;
 
           // Skip if this is our own in-flight optimistic update
           if (inFlightRef.current.has(photo_id)) {
@@ -161,9 +204,16 @@ export function useSharedSelections({
           table: "shared_selections",
           filter: `gallery_id=eq.${galleryId}`,
         } as Record<string, unknown>,
-        (payload: { old: { photo_id: string } }) => {
+        (payload: { old: { id?: string; photo_id?: string; gallery_id?: string } }) => {
           if (!mountedRef.current) return;
-          const { photo_id } = payload.old;
+          const photo_id = payload.old?.photo_id;
+
+          // If photo_id is missing from old record (e.g. before REPLICA IDENTITY FULL is set),
+          // refetch authoritative selections from server immediately to guarantee sync!
+          if (!photo_id) {
+            fetchSelections();
+            return;
+          }
 
           if (inFlightRef.current.has(photo_id)) {
             inFlightRef.current.delete(photo_id);
@@ -309,6 +359,19 @@ export function useSharedSelections({
             const next = new Map(prev);
             next.delete(photoId);
             return next;
+          });
+        }
+
+        // Broadcast to other open devices on the channel immediately
+        if (channelRef.current && (result.action === "selected" || result.action === "deselected")) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "selection_toggled",
+            payload: {
+              action: result.action,
+              photo_id: photoId,
+              photo_name: photoName,
+            },
           });
         }
 
