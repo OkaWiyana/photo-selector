@@ -67,3 +67,69 @@ export function updateGalleryInStore(id: string, updates: Partial<Gallery>): boo
   });
   return true;
 }
+
+export interface MockSharedSelectionItem {
+  photo_id: string;
+  photo_name: string;
+  selected_at: string;
+}
+
+const globalMockSharedSelections = new Map<string, MockSharedSelectionItem[]>();
+
+export function getMockSharedSelections(galleryId: string): MockSharedSelectionItem[] {
+  return globalMockSharedSelections.get(galleryId) || [];
+}
+
+export function toggleMockSharedSelection(
+  galleryId: string,
+  photoId: string,
+  photoName: string,
+  maxSelections: number
+): {
+  action: "selected" | "deselected" | "limit_reached";
+  photo_id: string;
+  photo_name: string;
+  total_selected: number;
+  max_selections: number;
+} {
+  const current = globalMockSharedSelections.get(galleryId) || [];
+  const existingIdx = current.findIndex((item) => item.photo_id === photoId);
+
+  if (existingIdx !== -1) {
+    current.splice(existingIdx, 1);
+    globalMockSharedSelections.set(galleryId, current);
+    return {
+      action: "deselected",
+      photo_id: photoId,
+      photo_name: photoName,
+      total_selected: current.length,
+      max_selections: maxSelections,
+    };
+  }
+
+  if (current.length >= maxSelections) {
+    return {
+      action: "limit_reached",
+      photo_id: photoId,
+      photo_name: photoName,
+      total_selected: current.length,
+      max_selections: maxSelections,
+    };
+  }
+
+  current.push({
+    photo_id: photoId,
+    photo_name: photoName,
+    selected_at: new Date().toISOString(),
+  });
+  globalMockSharedSelections.set(galleryId, current);
+
+  return {
+    action: "selected",
+    photo_id: photoId,
+    photo_name: photoName,
+    total_selected: current.length,
+    max_selections: maxSelections,
+  };
+}
+

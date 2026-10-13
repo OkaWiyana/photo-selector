@@ -7,6 +7,7 @@ import { Photo } from "@/lib/types/gallery";
 interface PhotoCardProps {
   photo: Photo;
   isSelected: boolean;
+  isDisabled?: boolean;
   onToggleSelect: (photo: Photo) => void;
   onOpenPreview: (photo: Photo) => void;
   index: number;
@@ -15,6 +16,7 @@ interface PhotoCardProps {
 export function PhotoCard({
   photo,
   isSelected,
+  isDisabled = false,
   onToggleSelect,
   onOpenPreview,
   index,
