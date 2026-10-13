@@ -1,12 +1,37 @@
 "use client";
 
+import type { ConnectionStatus } from "@/lib/hooks/useSharedSelections";
+
 interface GalleryHeaderProps {
   title: string;
   clientName: string;
   selectedCount: number;
   maxSelections: number;
   showLimitWarning: boolean;
+  connectionStatus?: ConnectionStatus;
 }
+
+const STATUS_CONFIG: Record<
+  ConnectionStatus,
+  { label: string; color: string; dotColor: string }
+> = {
+  connected: {
+    label: "Sync",
+    color: "text-emerald-400",
+    dotColor: "bg-emerald-500",
+  },
+  connecting: {
+    label: "Connecting...",
+    color: "text-amber-400",
+    dotColor: "bg-amber-500 animate-pulse",
+  },
+  disconnected: {
+    label: "Reconnecting...",
+    color: "text-amber-400",
+    dotColor: "bg-amber-500 animate-pulse",
+  },
+  error: { label: "Offline", color: "text-red-400", dotColor: "bg-red-500" },
+};
 
 export function GalleryHeader({
   title,
@@ -14,9 +39,14 @@ export function GalleryHeader({
   selectedCount,
   maxSelections,
   showLimitWarning,
+  connectionStatus = "connecting",
 }: GalleryHeaderProps) {
-  const percentage = Math.min(100, Math.round((selectedCount / maxSelections) * 100));
+  const percentage = Math.min(
+    100,
+    Math.round((selectedCount / maxSelections) * 100),
+  );
   const isLimitReached = selectedCount >= maxSelections;
+  const statusConfig = STATUS_CONFIG[connectionStatus];
 
   return (
     <header className="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/80 transition-colors">
@@ -34,10 +64,23 @@ export function GalleryHeader({
             </h1>
           </div>
 
-          {/* Selection Stats */}
-          <div className="flex flex-col items-start sm:items-end gap-1.5 min-w-[200px]">
+          {/* Selection Stats + Sync Status */}
+          <div className="flex flex-col items-start sm:items-end gap-1.5 min-w-50">
             <div className="flex items-center justify-between w-full text-sm">
-              <span className="text-zinc-400 font-medium">Selected Photos</span>
+              <div className="flex items-center gap-2 pr-2">
+                <span className="text-zinc-400 font-medium">
+                  Selected Photos
+                </span>
+                {/* Realtime sync indicator */}
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-mono ${statusConfig.color}`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${statusConfig.dotColor}`}
+                  />
+                  {statusConfig.label}
+                </span>
+              </div>
               <span
                 className={`font-mono font-bold px-2.5 py-0.5 rounded-md text-sm ${
                   isLimitReached
@@ -66,7 +109,7 @@ export function GalleryHeader({
           <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-amber-950/70 border border-amber-500/40 p-3 text-amber-200 text-xs sm:text-sm animate-in slide-in-from-top-2 duration-200">
             <div className="flex items-center gap-2">
               <svg
-                className="h-5 w-5 text-amber-400 flex-shrink-0"
+                className="h-5 w-5 text-amber-400 shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -79,7 +122,8 @@ export function GalleryHeader({
                 />
               </svg>
               <span>
-                Maximum limit of <strong>{maxSelections} photos</strong> reached. Deselect a photo to choose a different one.
+                Maximum limit of <strong>{maxSelections} photos</strong>{" "}
+                reached. Deselect a photo to choose a different one.
               </span>
             </div>
           </div>
