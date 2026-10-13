@@ -352,7 +352,8 @@ export interface GallerySelectionSummary {
 }
 
 /**
- * Retrieves list of all created galleries with client selections for Photographer Dashboard
+ * Retrieves list of all created galleries with client selections for Photographer Dashboard.
+ * Merges data from both legacy gallery_selections (JSONB) and new shared_selections tables.
  */
 export async function getAllGalleriesWithSelections(): Promise<GallerySelectionSummary[]> {
   const supabase = getSupabaseClient() || getSupabaseAdminClient();
@@ -367,23 +368,50 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
         .order("created_at", { ascending: false });
 
       if (galleries && galleries.length > 0) {
-        const { data: selections } = await supabase
+        // Fetch legacy selections
+        const { data: legacySelections } = await supabase
           .from("gallery_selections")
           .select("*");
 
-        const selectionsMap = new Map<string, { filenames: string[]; updatedAt?: string }>();
-        if (selections) {
-          for (const s of selections) {
-            selectionsMap.set(s.gallery_id, {
+        const legacyMap = new Map<string, { filenames: string[]; updatedAt?: string }>();
+        if (legacySelections) {
+          for (const s of legacySelections) {
+            legacyMap.set(s.gallery_id, {
               filenames: (s.selected_filenames as string[]) || [],
               updatedAt: s.created_at,
             });
           }
         }
 
+        // Fetch shared selections (new per-row format)
+        const { data: sharedSelections } = await supabase
+          .from("shared_selections")
+          .select("gallery_id, photo_name, selected_at")
+          .order("selected_at", { ascending: true });
+
+        const sharedMap = new Map<string, { filenames: string[]; updatedAt?: string }>();
+        if (sharedSelections) {
+          for (const s of sharedSelections) {
+            const existing = sharedMap.get(s.gallery_id);
+            if (existing) {
+              existing.filenames.push(s.photo_name);
+              existing.updatedAt = s.selected_at;
+            } else {
+              sharedMap.set(s.gallery_id, {
+                filenames: [s.photo_name],
+                updatedAt: s.selected_at,
+              });
+            }
+          }
+        }
+
         for (const g of galleries) {
-          const sel = selectionsMap.get(g.id);
+          // Prefer shared_selections over legacy gallery_selections
+          const shared = sharedMap.get(g.id);
+          const legacy = legacyMap.get(g.id);
+          const sel = shared && shared.filenames.length > 0 ? shared : legacy;
           const filenames = sel?.filenames || [];
+
           summaryMap.set(g.id, {
             id: g.id,
             clientName: g.client_name,
@@ -518,6 +546,7 @@ export async function deleteGalleryConfig(id: string): Promise<{ success: boolea
   const supabase = getSupabaseAdminClient() || getSupabaseClient();
   if (supabase) {
     try {
+      await supabase.from("shared_selections").delete().eq("gallery_id", id);
       await supabase.from("gallery_selections").delete().eq("gallery_id", id);
       const { error } = await supabase.from("galleries").delete().eq("id", id);
       if (error) {

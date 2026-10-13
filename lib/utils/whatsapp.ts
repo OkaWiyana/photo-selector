@@ -41,6 +41,16 @@ export function formatWhatsAppMessage(
   return `${header}\n\n${photoListText}\n\nTotal: ${totalCount} foto.`;
 }
 
+export function formatCopy(selectedPhotos: Photo[]) {
+  const photoListText = selectedPhotos
+    .map((photo, index) => `${index + 1}. ${photo.name}`)
+    .join("\n");
+
+  // const totalCount = selectedPhotos.length;
+
+  return `${photoListText}`;
+}
+
 /**
  * Constructs a WhatsApp deep link URL for client selections submission.
  * Uses api.whatsapp.com directly to avoid wa.me HTTP 302 redirect UTF-8 emoji corruption on desktop browsers.
