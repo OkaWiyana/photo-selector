@@ -1,653 +1,352 @@
 # Kala Archives — Photo Proofing
 
-> Private photo proofing platform for photographers.
+> Private photo proofing & workflow platform for photographers.
 
-Kala Archives adalah aplikasi web untuk membantu fotografer mengelola proses **photo proofing** secara sederhana.
+Kala Archives adalah aplikasi web modern untuk membantu fotografer mengelola proses **photo proofing** dan pemilihan foto klien secara sederhana, cepat, dan kolaboratif.
 
-Fotografer dapat membuat galeri berdasarkan folder foto di **Google Drive**, kemudian membagikan link galeri kepada klien. Klien dapat melihat, melakukan preview, dan memilih foto yang ingin diedit sesuai batas jumlah yang ditentukan fotografer.
+Fotografer dapat membuat galeri berdasarkan folder foto di **Google Drive**, kemudian membagikan link galeri kepada klien. Klien dapat membuka galeri dari berbagai perangkat secara bersamaan, melakukan preview lightbox, dan memilih foto dengan fitur **Shared Live Sync (Real-time)**.
 
-Setelah selesai memilih, daftar foto terpilih dapat langsung dikirimkan kepada fotografer melalui **WhatsApp**, sehingga klien tidak perlu mengetik nama file secara manual.
+Setelah selesai, daftar foto terpilih dapat langsung dikirimkan kepada fotografer melalui **WhatsApp** atau disalin ke clipboard menggunakan tombol **Copy**, tanpa perlu mencatat nama file satu per satu secara manual. Fotografer juga dilengkapi dengan **Admin Dashboard** untuk memantau progres pemilihan dan **Editor Workspace** untuk mencocokkan nama file foto yang dipilih dengan file RAW/JPG di komputer lokal.
 
-Project ini dikembangkan sebagai **personal project dan MVP** untuk kebutuhan photo proofing fotografi, sekaligus sebagai eksplorasi pengembangan aplikasi web menggunakan Next.js, Google Drive API, Supabase, dan Vercel.
+Project ini dikembangkan sebagai personal project, portfolio, dan MVP yang siap digunakan untuk workflow fotografi nyata menggunakan **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, **Google Drive API**, dan **Supabase (Database & Realtime)**.
 
 ---
 
 ## ✨ Features
 
-### 📷 Photographer / Admin
+### 🖼️ Client Photo Proofing & Shared Selection
+- **Google Drive Direct Streaming**: Foto ditampilkan langsung dari folder Google Drive tanpa perlu re-upload.
+- **Shared Live Selection (Real-time Sync)**: Beberapa orang (misal: pasangan atau keluarga) dapat membuka satu link galeri yang sama dari berbagai perangkat (HP & laptop) dan memilih foto secara bersamaan. Pilihan dan pembatalan foto tersinkronisasi seketika secara live tanpa perlu reload.
+- **Enforced Global Selection Limit**: Batas maksimal pilihan berlaku secara global untuk seluruh galeri dan aman dari race-condition via fungsi atomic PostgreSQL.
+- **Dual Submit / Export Action**:
+  - **Kirim WhatsApp**: Mengirimkan daftar foto terpilih otomatis dengan format pesan rapi langsung ke nomor WhatsApp fotografer.
+  - **Copy List**: Opsi menyalin daftar nama file foto ke clipboard dengan satu klik (sangat berguna di desktop atau jika ingin dikirim via email/DM).
+- **Responsive Mobile-First UI**: Tampilan galeri dan action bar bawah yang bersih, nyaman, dan ergonomis di layar smartphone maupun layar lebar.
+- **Photo Preview / Lightbox**: Fitur preview foto layar penuh dengan navigasi cepat.
+- **Connection Status Indicator**: Menampilkan status sinkronisasi live (Sync, Connecting, Reconnecting, Offline) di header galeri.
 
-- Membuat gallery baru.
-- Memasukkan nama klien.
-- Menghubungkan gallery dengan folder Google Drive.
-- Menentukan jumlah maksimum foto yang dapat dipilih.
-- Menentukan nomor WhatsApp fotografer.
-- Menghasilkan link gallery khusus untuk setiap klien.
-- Menyimpan konfigurasi gallery secara persisten.
+### 📷 Photographer Admin & Dashboard
+- **Create Gallery Wizard (`/admin`)**:
+  - Memasukkan nama klien.
+  - Menghubungkan URL folder Google Drive (otomatis validasi & ekstrak Folder ID).
+  - Menentukan kuota batas maksimal pilihan foto.
+  - Menentukan nomor WhatsApp tujuan.
+  - Menghasilkan link unik `/gallery/[id]`.
+- **Photographer Dashboard (`/admin/dashboard`)**:
+  - Melihat daftar semua galeri yang pernah dibuat.
+  - Memantau status pemilihan klien secara real-time (jumlah foto yang sudah dipilih vs batas maksimal).
+  - Melihat detail nama file yang dipilih klien.
+  - Akses cepat untuk menyalin link galeri, membuka galeri klien, atau menghapus galeri.
 
-### 🖼️ Client Photo Proofing
-
-- Menampilkan foto langsung dari Google Drive.
-- Responsive photo gallery.
-- Preview foto menggunakan lightbox.
-- Memilih foto yang ingin diedit.
-- Membatasi jumlah foto sesuai konfigurasi fotografer.
-- Menampilkan jumlah foto yang sudah dipilih.
-- Menampilkan status batas pilihan secara real-time.
-- Mengirim daftar foto terpilih melalui WhatsApp.
-- Nama file foto dimasukkan otomatis ke dalam pesan WhatsApp.
-- Klien tidak perlu mengetik nama file secara manual.
+### 💻 Editor Workspace & Photo Matching (`/editor`)
+- **Matching Tool**: Mencocokkan daftar nama file foto yang dipilih klien dengan folder foto lokal di komputer fotografer.
+- **Multi-Format Support**: Mendukung deteksi file RAW (.CR2, .CR3, .ARW, .NEF, .DNG) dan JPG.
+- **Export & Job Management**: Simpan preset pekerjaan editing dan salin/pindahkan hanya foto-foto yang dipilih untuk efisiensi workflow editing.
 
 ### ☁️ Google Drive Integration
+- Menggunakan Service Account Google Drive API untuk akses server-side yang aman.
+- Mendukung folder publik maupun shared folder Google Drive.
+- Otomatis memfilter hanya format file gambar yang didukung.
 
-- Google Drive digunakan sebagai sumber foto.
-- Fotografer cukup memasukkan link folder Google Drive.
-- Aplikasi mengambil foto dari folder tersebut melalui Google Drive API.
-- Foto tidak perlu di-upload ulang ke aplikasi.
-- Kredensial Google Drive hanya digunakan pada server.
+### 💾 Persistent Database & Realtime
+- Konfigurasi galeri dan data pilihan foto disimpan secara persisten di Supabase.
+- Menggunakan skema granular `shared_selections` dengan `REPLICA IDENTITY FULL` untuk mendukung sinkronisasi real-time dua arah (INSERT & DELETE).
+- Dilengkapi fallback cerdas untuk galeri lokal/demo.
 
-### 💾 Persistent Storage
-
-- Konfigurasi gallery disimpan menggunakan Supabase.
-- Gallery tidak hilang ketika development server direstart.
-- Link gallery yang sudah dibuat tetap dapat digunakan selama record-nya masih tersedia di database.
-- Supabase hanya menyimpan konfigurasi dan referensi folder Google Drive, bukan file foto.
-
-### 🔐 Security
-
-- Google Drive credentials hanya digunakan pada server.
-- Supabase service-role key hanya digunakan pada server.
-- Secret credentials tidak diekspos ke browser.
-- Environment variables digunakan untuk konfigurasi sensitif.
-- `.env.local` tidak disimpan di repository.
+### 🔐 Security & Privacy
+- Kredensial sensitif (Google Service Account private key & Supabase Service Role key) **100% server-side** dan tidak pernah diekspos ke browser.
+- Browser client hanya menggunakan Supabase Anon Key publik yang diproteksi Row Level Security (RLS).
+- Validasi input ketat dan sanitasi nomor telepon.
 
 ---
 
-# 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
-| Technology           | Purpose                          |
-| -------------------- | -------------------------------- |
-| **Next.js**          | Full-stack React framework       |
-| **React**            | User interface                   |
-| **TypeScript**       | Type-safe development            |
-| **Tailwind CSS**     | Styling & responsive UI          |
-| **Supabase**         | Persistent gallery configuration |
-| **Google Drive API** | Photo source                     |
-| **WhatsApp**         | Client selection delivery        |
-| **Vercel**           | Deployment                       |
+| Technology | Purpose |
+| --- | --- |
+| **Next.js (App Router)** | Full-stack React Framework (Server Components & API Routes) |
+| **React 19** | Modern UI components & client interactivity |
+| **TypeScript** | Strict type safety di seluruh layer aplikasi |
+| **Tailwind CSS v4** | Styling sistem, dark theme, dan responsive UI |
+| **Supabase Database** | PostgreSQL persistent storage (Galleries & Shared Selections) |
+| **Supabase Realtime** | WebSocket Postgres Changes & Broadcast Channel untuk live sync |
+| **Google Drive API (v3)** | Server-side photo metadata & preview extraction |
+| **WhatsApp Deep Link** | Pengiriman daftar seleksi terformat via URL-encoded messaging |
+| **Vercel** | Hosting platform & edge deployment |
 
 ---
 
-# 🏗️ Architecture
+## 🏗️ Architecture
 
 ```text
 Photographer
-     |
-     v
-  /admin
-     |
-     v
-  Supabase
-     |
-     v
-/gallery/[id]
-     |
-     v
-Google Drive API
-     |
-     v
-Client Gallery
-     |
-     v
-Photo Selection
-     |
-     v
-WhatsApp
-     |
-     v
-Photographer
+     │
+     ├─────────────► /admin ─────────────► Supabase (Create Gallery)
+     │                                           │
+     ├─────────────► /admin/dashboard ◄──────────┤ (Monitor Selections)
+     │                                           │
+     └─────────────► /editor (Photo Matcher)     │
+                                                 │
+Client Devices (HP / Laptop)                     ▼
+     │                                     /gallery/[id]
+     ├───────────────────────────────────────────┤
+     │                                           ├─► Google Drive API (Photos)
+     │                                           │
+     ├─── Device A (Selects Photo) ───┐          ├─► POST /api/selections/toggle
+     │                                │          │        │
+     │   ◄─── Supabase Realtime ──────┴──────────┼────────┘ (Atomic PostgreSQL Function)
+     │        (Broadcast + Postgres Changes)     │
+     │                                           │
+     └─── Device B (Live Deselects Photo)        │
+                                                 │
+                                                 ▼
+                                     Floating Action Bar
+                                     ┌───────────┴───────────┐
+                                     ▼                       ▼
+                               Kirim WhatsApp            Salin (Copy)
 ```
 
 ---
 
-# 🔄 Application Flow
+## 🔄 Application Flow
 
-## 1. Photographer Creates Gallery
+### 1. Photographer Membuat Galeri
+1. Fotografer membuka `/admin`.
+2. Mengisi nama klien, link folder Google Drive, batas foto, dan nomor WhatsApp.
+3. Aplikasi mengekstrak Google Drive Folder ID, menyimpan konfigurasi ke tabel `galleries` di Supabase, dan membuat URL galeri unik:
+   ```text
+   https://domain.com/gallery/gal_xxxxxx
+   ```
 
-Photographer membuka `/admin` dan mengisi:
+### 2. Klien Membuka Galeri & Memilih Bersama (Shared Live Sync)
+1. Klien membuka URL galeri dari smartphone atau laptop.
+2. Foto-foto dimuat secara lazy-loaded dari Google Drive API.
+3. Klien atau pasangannya memilih/membatalkan foto:
+   - Request dikirim ke `POST /api/selections/toggle`.
+   - Database PostgreSQL menjalankan function `toggle_photo_selection` untuk memastikan batas pilihan tidak terlampaui (mencegah race-condition).
+   - Event Realtime (`Broadcast` & `Postgres Changes`) memancarkan perubahan ke semua perangkat yang sedang membuka galeri tersebut secara instan.
+   - Counter pilihan (misal: `Selected 7 / 10`) terupdate secara otomatis di semua layar.
 
-- Client name
-- Google Drive folder URL
-- Maximum selections
-- WhatsApp number
+### 3. Finalisasi Pilihan Klien
+Setelah foto selesai dipilih, klien memiliki 2 opsi mudah di Floating Action Bar:
+- **Kirim WhatsApp**: Membuka WhatsApp dengan pesan otomatis berisi nomor urut dan nama file foto yang terpilih.
+- **Copy**: Menyalin daftar nama file ke clipboard untuk dikirim lewat channel lain atau disimpan sebagai catatan.
 
-Setelah form dikirim:
-
-```text
-Admin
-  ↓
-createGalleryConfig()
-  ↓
-Supabase INSERT
-  ↓
-Generate Gallery ID
-  ↓
-Redirect
-  ↓
-/gallery/[id]
-```
-
-## 2. Client Opens Gallery
-
-Client menerima link seperti:
-
-```text
-https://your-domain.com/gallery/gal_xxxxx
-```
-
-Aplikasi kemudian:
-
-```text
-Gallery ID
-    ↓
-Supabase
-    ↓
-Get Gallery Configuration
-    ↓
-Get Google Drive Folder ID
-    ↓
-Google Drive API
-    ↓
-Fetch Photos
-    ↓
-Render Gallery
-```
-
-## 3. Client Selects Photos
-
-Client dapat memilih foto sesuai batas yang ditentukan fotografer.
-
-Contoh:
-
-```text
-Selected 7 / 10
-```
-
-Jika batas sudah tercapai:
-
-```text
-Selected 10 / 10
-```
-
-## 4. Client Sends Selection
-
-Setelah selesai memilih, client menekan tombol WhatsApp.
-
-Aplikasi otomatis membuat pesan berisi nama client dan daftar nama file foto yang dipilih. Client tidak perlu mengetik nama file secara manual.
+### 4. Fotografer Memproses Foto (Dashboard & Editor)
+- Fotografer dapat membuka `/admin/dashboard` kapan saja untuk melihat status seleksi klien.
+- Fotografer dapat membuka `/editor` untuk langsung mencocokkan nama file yang dipilih klien dengan file RAW di harddisk lokal untuk siap diedit di Lightroom / Photoshop.
 
 ---
 
-# 💾 Database
+## 💾 Database Schema
 
-Supabase digunakan sebagai persistent storage untuk konfigurasi gallery.
+Supabase PostgreSQL menggunakan dua tabel utama:
 
-Table utama:
+### 1. Tabel `galleries`
+Menyimpan konfigurasi galeri fotografer.
 
-```text
-galleries
-├── id
-├── client_name
-├── drive_folder_id
-├── max_selections
-├── whatsapp_number
-└── created_at
+```sql
+CREATE TABLE galleries (
+  id TEXT PRIMARY KEY,
+  client_name TEXT NOT NULL,
+  drive_folder_id TEXT NOT NULL,
+  max_selections INTEGER NOT NULL DEFAULT 10,
+  whatsapp_number TEXT NOT NULL,
+  client_whatsapp_number TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
-| Column            | Type        | Description                      |
-| ----------------- | ----------- | -------------------------------- |
-| `id`              | TEXT        | Unique gallery ID                |
-| `client_name`     | TEXT        | Nama client                      |
-| `drive_folder_id` | TEXT        | Google Drive folder ID           |
-| `max_selections`  | INTEGER     | Maksimum foto yang dapat dipilih |
-| `whatsapp_number` | TEXT        | Nomor WhatsApp fotografer        |
-| `created_at`      | TIMESTAMPTZ | Waktu gallery dibuat             |
+### 2. Tabel `shared_selections` (Real-time Selections)
+Menyimpan setiap foto yang dipilih secara granular untuk mendukung live sync antar perangkat.
 
-Google Drive tetap menjadi sumber file foto, sedangkan Supabase hanya menyimpan konfigurasi gallery.
+```sql
+CREATE TABLE shared_selections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gallery_id TEXT NOT NULL REFERENCES galleries(id) ON DELETE CASCADE,
+  photo_id TEXT NOT NULL,
+  photo_name TEXT NOT NULL,
+  selected_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Wajib untuk Realtime DELETE event:
+ALTER TABLE shared_selections REPLICA IDENTITY FULL;
+
+-- Aktifkan Realtime:
+ALTER PUBLICATION supabase_realtime ADD TABLE shared_selections;
+```
 
 ---
 
-# 📁 Project Structure
+## 📁 Project Structure
 
 ```text
 photo-selector/
-│
 ├── app/
 │   ├── admin/
+│   │   ├── dashboard/page.tsx    # Photographer monitoring dashboard
+│   │   └── page.tsx              # Create gallery page
+│   ├── api/
+│   │   ├── drive-image/          # Server proxy for Google Drive thumbnails
+│   │   └── selections/
+│   │       ├── [galleryId]/      # Fetch selections API (Supabase + fallback)
+│   │       └── toggle/           # Atomic toggle selection API
+│   ├── editor/
+│   │   └── page.tsx              # Local RAW/JPG matching workspace
 │   ├── gallery/
-│   │   └── [id]/
-│   └── ...
+│   │   └── [id]/page.tsx         # Client photo proofing page
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx                  # Home / Landing page
 │
 ├── components/
+│   ├── admin/                    # Admin forms, tables & monitor components
+│   ├── editor/                   # Editor workspace, folder selector, result tables
 │   ├── gallery/
-│   ├── admin/
-│   └── ...
+│   │   ├── GalleryContainer.tsx  # Main gallery interactive client wrapper
+│   │   ├── GalleryHeader.tsx     # Header with counter & sync status indicator
+│   │   ├── PhotoCard.tsx         # Grid photo tile with select toggle
+│   │   ├── PhotoLightbox.tsx     # Fullscreen photo preview
+│   │   └── FloatingActionBar.tsx # Bottom bar (Counter + Copy + WhatsApp actions)
+│   └── ui/                       # Shared UI modals and components
 │
 ├── lib/
+│   ├── hooks/
+│   │   └── useSharedSelections.ts # Realtime shared selection sync hook
 │   ├── services/
-│   │   ├── gallery-service.ts
-│   │   ├── google-drive.ts
-│   │   └── ...
+│   │   ├── gallery-service.ts    # Gallery service layer & data fetching
+│   │   ├── google-drive.ts       # Google Drive API integration
+│   │   └── editor-storage-service.ts # Local storage service for editor jobs
 │   ├── supabase/
-│   │   └── server.ts
-│   └── types/
-│       └── gallery.ts
+│   │   ├── browser.ts            # Client-side Supabase client (Anon key)
+│   │   └── server.ts             # Server-side Supabase client (Service role)
+│   ├── types/                    # TypeScript interfaces & types
+│   └── utils/
+│       ├── editor.ts             # Filename matching algorithm & parser
+│       └── whatsapp.ts           # WhatsApp message formatting & deep links
 │
 ├── supabase/
-│   └── schema.sql
+│   ├── migrations/
+│   │   └── 001_shared_selections.sql # Migration for shared live sync
+│   └── schema.sql                # Complete Supabase reference schema
 │
-├── public/
 ├── .env.example
-├── .gitignore
 ├── package.json
 └── README.md
 ```
 
 ---
 
-# 🚀 Getting Started
+## 🚀 Getting Started
 
-## Prerequisites
+### Prerequisites
+- Node.js 18+ (disarankan Node.js 20+)
+- npm / pnpm / yarn
+- Akun Supabase (Gratis)
+- Google Cloud Console Project (dengan Google Drive API aktif)
 
-- Node.js
-- npm
-- Git
-
-## 1. Clone Repository
-
+### 1. Clone Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/OkaWiyana/photo-selector.git
 cd photo-selector
 ```
 
-## 2. Install Dependencies
-
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-## 3. Configure Environment Variables
+### 3. Setup Database (Supabase)
+1. Buat project baru di [Supabase Dashboard](https://supabase.com/dashboard).
+2. Buka menu **SQL Editor**.
+3. Jalankan script dari file [`supabase/schema.sql`](supabase/schema.sql) atau [`supabase/migrations/001_shared_selections.sql`](supabase/migrations/001_shared_selections.sql).
+4. Pastikan baris berikut ikut dijalankan agar event batal pilih (*DELETE*) tersinkronisasi:
+   ```sql
+   ALTER TABLE shared_selections REPLICA IDENTITY FULL;
+   ```
 
-### Windows
+### 4. Setup Google Drive API
+1. Buat Service Account di Google Cloud Console dan unduh file JSON key-nya.
+2. Aktifkan **Google Drive API**.
+3. Masukkan Service Account Email dan Private Key ke file environment.
+4. *Catatan:* Folder Google Drive yang akan digunakan harus dibagikan (*Share*) ke email Service Account tersebut dengan akses Viewer, atau disetel ke *Anyone with the link can view*.
 
-```powershell
-Copy-Item .env.example .env.local
-```
-
-### macOS / Linux
-
+### 5. Konfigurasi Environment Variables
+Salin template environment:
 ```bash
 cp .env.example .env.local
 ```
 
-Kemudian isi nilai environment variables sesuai project masing-masing.
-
----
-
-# 🔐 Environment Variables
-
-Contoh `.env.local`:
-
+Isi nilai di `.env.local`:
 ```dotenv
-# Google Drive
-GOOGLE_SERVICE_ACCOUNT_EMAIL="your-service-account@your-project.iam.gserviceaccount.com"
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
-YOUR_PRIVATE_KEY_HERE
------END PRIVATE KEY-----
-"
-
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-publishable-or-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-secret-key"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+
+# Google Drive API
+GOOGLE_SERVICE_ACCOUNT_EMAIL="your-service-account@project.iam.gserviceaccount.com"
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n"
 ```
 
-> **WARNING:** Jangan pernah memasukkan credentials asli ke repository public.
-
-File `.env.local` harus tetap berada di local environment dan tidak boleh di-commit.
-
-`SUPABASE_SERVICE_ROLE_KEY` merupakan credential sensitif dan hanya boleh digunakan pada server.
-
----
-
-# 🗄️ Supabase Setup
-
-Buat project baru di Supabase.
-
-Kemudian buka:
-
-```text
-Supabase Dashboard
-    ↓
-SQL Editor
-```
-
-Jalankan schema yang tersedia di:
-
-```text
-supabase/schema.sql
-```
-
-Setelah table berhasil dibuat, konfigurasi environment variables sesuai project Supabase.
-
----
-
-# ☁️ Google Drive Setup
-
-Aplikasi menggunakan Google Drive sebagai sumber foto.
-
-Flow penggunaan:
-
-```text
-Google Drive
-    ↓
-Client Folder
-    ↓
-Share Folder
-    ↓
-Copy Folder URL
-    ↓
-Paste ke /admin
-```
-
-Contoh struktur folder:
-
-```text
-Google Drive
-│
-├── Client A
-│   ├── IMG_001.JPG
-│   ├── IMG_002.JPG
-│   ├── IMG_003.JPG
-│   └── ...
-│
-├── Client B
-│   ├── IMG_101.JPG
-│   ├── IMG_102.JPG
-│   └── ...
-│
-└── Client C
-    └── ...
-```
-
-Aplikasi mengambil `folderId` dari Google Drive URL dan menggunakan Google Drive API untuk mengambil daftar file gambar.
-
----
-
-# ▶️ Run Development Server
-
+### 6. Jalankan Local Development
 ```bash
 npm run dev
 ```
 
-Kemudian buka:
-
-```text
-http://localhost:3000
-```
-
-Admin:
-
-```text
-http://localhost:3000/admin
-```
+Buka di browser:
+- Client Gallery Demo: `http://localhost:3000/gallery/demo`
+- Create Gallery: `http://localhost:3000/admin`
+- Photographer Dashboard: `http://localhost:3000/admin/dashboard`
+- Editor Matching Tool: `http://localhost:3000/editor`
 
 ---
 
-# 🧪 Testing
+## 🧪 Quality & Build Verification
 
-Sebelum deployment:
-
-```bash
-npm run lint
-```
+Pastikan kode selalu bersih dan bebas error sebelum push:
 
 ```bash
+# Type checking
 npx tsc --noEmit
-```
 
-```bash
+# Linting
+npm run lint
+
+# Production build test
 npm run build
 ```
 
-Ketiga command tersebut harus berhasil tanpa error.
+---
 
-## Manual Verification
+## 🗺️ Roadmap & Progress
 
-### Gallery Creation
-
-1. Buka `/admin`.
-2. Masukkan nama client.
-3. Masukkan Google Drive folder URL.
-4. Tentukan maximum selections.
-5. Masukkan nomor WhatsApp.
-6. Submit form.
-7. Pastikan gallery berhasil dibuat.
-8. Pastikan konfigurasi gallery masuk ke Supabase.
-
-### Client Gallery
-
-1. Buka generated gallery URL.
-2. Pastikan foto Google Drive muncul.
-3. Buka preview foto.
-4. Pilih beberapa foto.
-5. Pastikan selection counter berubah.
-6. Pastikan batas maksimum bekerja.
-7. Batalkan salah satu pilihan.
-8. Pilih foto lain.
-
-### WhatsApp
-
-1. Pilih beberapa foto.
-2. Klik tombol WhatsApp.
-3. Pastikan WhatsApp terbuka.
-4. Pastikan nama file foto muncul otomatis.
-5. Pastikan nomor tujuan benar.
-
-### Persistence
-
-```text
-Create Gallery
-      ↓
-Copy Gallery URL
-      ↓
-Stop Next.js
-      ↓
-npm run dev
-      ↓
-Open Previous Gallery URL
-```
-
-Gallery harus tetap dapat ditemukan karena konfigurasi disimpan di Supabase.
+- [x] Next.js App Router & TypeScript architecture
+- [x] Responsive client gallery with Google Drive streaming
+- [x] Photo preview lightbox
+- [x] Selection limits & counter
+- [x] WhatsApp formatted deep link generator
+- [x] Copy list to clipboard action for desktop & mobile
+- [x] Photographer create gallery wizard (`/admin`)
+- [x] Photographer dashboard & selection monitor (`/admin/dashboard`)
+- [x] Shared Live Selection with Realtime sync (multi-device collaboration)
+- [x] Atomic race-condition safe selection limit enforcement
+- [x] Editor workspace & RAW photo matching tool (`/editor`)
+- [x] Fallback offline/demo gallery support
+- [ ] Client gallery password protection (PIN access)
+- [ ] Automated email notification upon client selection completion
+- [ ] Bulk ZIP export / Google Drive tag automation
 
 ---
 
-# 🌐 Deployment
-
-Project dirancang untuk dapat di-deploy menggunakan **Vercel**.
-
-Build command:
-
-```bash
-npm run build
-```
-
-Tambahkan environment variables pada:
-
-```text
-Vercel
-  ↓
-Project Settings
-  ↓
-Environment Variables
-```
-
-Variables yang diperlukan:
-
-```text
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-GOOGLE_SERVICE_ACCOUNT_EMAIL
-GOOGLE_PRIVATE_KEY
-```
-
----
-
-# 🗺️ Roadmap
-
-## Completed
-
-- [x] Next.js application setup
-- [x] Responsive client gallery
-- [x] Photo preview / lightbox
-- [x] Photo selection
-- [x] Selection limit
-- [x] WhatsApp integration
-- [x] Automatic selected filename generation
-- [x] Photographer admin page
-- [x] Google Drive integration
-- [x] Dynamic gallery routing
-- [x] Persistent gallery configuration
-- [x] Supabase integration
-
-## Planned
-
-- [ ] Production deployment
-- [ ] Custom domain
-- [ ] Gallery management dashboard
-- [ ] Delete / archive gallery
-- [ ] Gallery expiration
-- [ ] Client access protection
-- [ ] Password-protected galleries
-- [ ] Selection history
-- [ ] Re-open previous selections
-- [ ] Photo delivery workflow
-- [ ] Client download functionality
-- [ ] Photographer dashboard
-- [ ] Multiple galleries management
-- [ ] Gallery status
-- [ ] Better error handling
-- [ ] Analytics
-
----
-
-# 🔮 Future Vision
-
-Kala Archives saat ini dimulai sebagai aplikasi sederhana untuk membantu fotografer melakukan photo proofing.
-
-Ke depannya, project ini dapat dikembangkan menjadi platform workflow fotografi yang lebih lengkap:
-
-```text
-                 KALA ARCHIVES
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-        ▼              ▼              ▼
-    Proofing       Selection       Delivery
-        │              │              │
-        ▼              ▼              ▼
-    Client         Editing         Download
-    Gallery        Request          Gallery
-        │              │              │
-        └──────────────┼──────────────┘
-                       ▼
-                Photographer
-                  Dashboard
-```
-
-Fokus utama tetap pada workflow yang sederhana dan cepat bagi fotografer maupun client.
-
----
-
-# 📌 Project Status
-
-**Status:** Active MVP / Personal Project
-
-Kala Archives saat ini dikembangkan sebagai personal photo proofing platform dan experimental project.
-
-Project ini juga digunakan sebagai eksplorasi teknologi:
-
-- Next.js
-- React
-- TypeScript
-- Supabase
-- Google Drive API
-- Vercel
-- Server-side application architecture
-
----
-
-# 🎯 Why This Project?
-
-Project ini dibuat untuk menyederhanakan workflow photo proofing:
-
-```text
-Photographer
-    ↓
-Upload banyak foto
-    ↓
-Client harus memilih foto
-    ↓
-Client melihat gallery
-    ↓
-Client mencatat nama file
-    ↓
-Client mengirim daftar foto
-```
-
-Kala Archives menyederhanakan proses tersebut menjadi:
-
-```text
-Photographer
-    ↓
-Create Gallery
-    ↓
-Share Link
-    ↓
-Client Select Photos
-    ↓
-Send via WhatsApp
-```
-
-Dengan begitu client tidak perlu:
-
-- Download seluruh foto.
-- Membuka file satu per satu.
-- Menyalin nama file secara manual.
-- Mengetik daftar foto ke WhatsApp.
-
----
-
-# 👤 Author
+## 👤 Author
 
 **Oka Wiyana**
-
-Kala Archives — Photo Proofing
-
-Built with:
-
-```text
-Next.js
-React
-TypeScript
-Supabase
-Google Drive API
-Vercel
-```
+- Project: Kala Archives — Photo Proofing & Workflow Platform
+- GitHub: [@OkaWiyana](https://github.com/OkaWiyana)
 
 ---
 
-# 📄 License
+## 📄 License
 
-This project is currently intended for personal use, experimentation, and portfolio purposes.
-
-No production license has been defined yet.
+This project is open for personal exploration, learning, and portfolio demonstration.
