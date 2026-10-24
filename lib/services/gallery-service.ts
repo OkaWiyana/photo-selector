@@ -9,6 +9,7 @@ import {
   getAllSelectionsFromStore,
   deleteGalleryFromStore,
   updateGalleryInStore,
+  getMockSharedSelections,
 } from "@/lib/data/gallery-store";
 import { extractDriveFolderId } from "@/lib/utils/gdrive";
 import { fetchPhotosFromDriveFolder, FetchDrivePhotosResult } from "@/lib/services/gdrive-service";
@@ -348,12 +349,13 @@ export interface GallerySelectionSummary {
   createdAt?: string;
   selectedFilenames: string[];
   updatedAt?: string;
-  status: "completed" | "pending";
+  submittedAt?: string;
+  status: "completed" | "draft" | "pending";
 }
 
 /**
  * Retrieves list of all created galleries with client selections for Photographer Dashboard.
- * Merges data from both legacy gallery_selections (JSONB) and new shared_selections tables.
+ * Merges data from both legacy gallery_selections (submitted via WA) and new shared_selections (live sync) tables.
  */
 export async function getAllGalleriesWithSelections(): Promise<GallerySelectionSummary[]> {
   const supabase = getSupabaseClient() || getSupabaseAdminClient();
@@ -368,7 +370,7 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
         .order("created_at", { ascending: false });
 
       if (galleries && galleries.length > 0) {
-        // Fetch legacy selections
+        // Fetch legacy/submitted selections
         const { data: legacySelections } = await supabase
           .from("gallery_selections")
           .select("*");
@@ -383,7 +385,7 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
           }
         }
 
-        // Fetch shared selections (new per-row format)
+        // Fetch shared selections (new per-row format for live device sync)
         const { data: sharedSelections } = await supabase
           .from("shared_selections")
           .select("gallery_id, photo_name, selected_at")
@@ -406,11 +408,28 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
         }
 
         for (const g of galleries) {
-          // Prefer shared_selections over legacy gallery_selections
+          // Prefer shared_selections (live state) over legacy gallery_selections,
+          // but if shared_selections is empty, fallback to legacy gallery_selections.
           const shared = sharedMap.get(g.id);
           const legacy = legacyMap.get(g.id);
           const sel = shared && shared.filenames.length > 0 ? shared : legacy;
           const filenames = sel?.filenames || [];
+
+          // Determine status:
+          // - "pending": 0 photos selected
+          // - "completed": Client has clicked "Kirim ke WhatsApp" or legacy submission exists
+          // - "draft": Photos are selected in live sync, but client has not clicked submit/WA yet
+          let status: "completed" | "draft" | "pending" = "pending";
+          let submittedAt: string | undefined = undefined;
+
+          if (filenames.length === 0) {
+            status = "pending";
+          } else if (legacy && legacy.filenames.length > 0) {
+            status = "completed";
+            submittedAt = legacy.updatedAt;
+          } else {
+            status = "draft";
+          }
 
           summaryMap.set(g.id, {
             id: g.id,
@@ -423,7 +442,8 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
             createdAt: g.created_at,
             selectedFilenames: filenames,
             updatedAt: sel?.updatedAt,
-            status: filenames.length > 0 ? "completed" : "pending",
+            submittedAt,
+            status,
           });
         }
       }
@@ -439,7 +459,24 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
   for (const g of memoryGalleries) {
     if (!summaryMap.has(g.id)) {
       const memSel = memorySelections.get(g.id);
-      const filenames = memSel?.selectedFilenames || [];
+      const mockShared = getMockSharedSelections(g.id);
+      const mockSharedFilenames = mockShared.map((item) => item.photo_name);
+
+      const hasSubmitted = Boolean(memSel && memSel.selectedFilenames.length > 0);
+      const filenames = mockSharedFilenames.length > 0 ? mockSharedFilenames : (memSel?.selectedFilenames || []);
+
+      let status: "completed" | "draft" | "pending" = "pending";
+      let submittedAt: string | undefined = undefined;
+
+      if (filenames.length === 0) {
+        status = "pending";
+      } else if (hasSubmitted) {
+        status = "completed";
+        submittedAt = memSel?.updatedAt;
+      } else {
+        status = "draft";
+      }
+
       summaryMap.set(g.id, {
         id: g.id,
         clientName: g.clientName,
@@ -450,8 +487,9 @@ export async function getAllGalleriesWithSelections(): Promise<GallerySelectionS
         clientWhatsappNumber: g.clientWhatsappNumber,
         createdAt: g.createdAt || new Date().toISOString(),
         selectedFilenames: filenames,
-        updatedAt: memSel?.updatedAt,
-        status: filenames.length > 0 ? "completed" : "pending",
+        updatedAt: memSel?.updatedAt || (mockShared[mockShared.length - 1]?.selected_at),
+        submittedAt,
+        status,
       });
     }
   }

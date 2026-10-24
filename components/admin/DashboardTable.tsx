@@ -27,7 +27,7 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
     useState<GallerySelectionSummary[]>(initialGalleries);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "completed" | "pending"
+    "all" | "completed" | "draft" | "pending"
   >("all");
   const [isPending, startTransition] = useTransition();
 
@@ -220,11 +220,7 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
       );
 
     const matchesStatus =
-      statusFilter === "all"
-        ? true
-        : statusFilter === "completed"
-          ? g.status === "completed"
-          : g.status === "pending";
+      statusFilter === "all" ? true : g.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -240,6 +236,7 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
   const completedCount = galleries.filter(
     (g) => g.status === "completed",
   ).length;
+  const draftCount = galleries.filter((g) => g.status === "draft").length;
   const pendingCount = galleries.filter((g) => g.status === "pending").length;
 
   const copyToClipboard = (text: string, label: string) => {
@@ -302,7 +299,7 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
 
       {/* Top Header Summary & Search/Filter Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/60 pb-3">
-        <div className="flex items-center gap-4 text-xs font-mono text-zinc-400">
+        <div className="flex items-center gap-3 sm:gap-4 text-xs font-mono text-zinc-400">
           <div>
             Total:{" "}
             <span className="text-white font-semibold">{totalCount}</span>
@@ -311,7 +308,10 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
             Selesai: <span className="font-semibold">{completedCount}</span>
           </div>
           <div className="text-amber-400">
-            Pending: <span className="font-semibold">{pendingCount}</span>
+            Draft: <span className="font-semibold">{draftCount}</span>
+          </div>
+          <div className="text-zinc-500">
+            Belum: <span className="font-semibold">{pendingCount}</span>
           </div>
         </div>
 
@@ -340,10 +340,10 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
             />
           </div>
 
-          <div className="flex items-center rounded-lg bg-zinc-900 p-1 border border-zinc-800 text-[11px] font-mono">
+          <div className="flex items-center rounded-lg bg-zinc-900 p-1 border border-zinc-800 text-[11px] font-mono overflow-x-auto">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`px-2.5 py-1 rounded transition-colors ${
+              className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
                 statusFilter === "all"
                   ? "bg-zinc-800 text-white font-semibold"
                   : "text-zinc-400 hover:text-zinc-200"
@@ -353,23 +353,33 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
             </button>
             <button
               onClick={() => setStatusFilter("completed")}
-              className={`px-2.5 py-1 rounded transition-colors ${
+              className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
                 statusFilter === "completed"
                   ? "bg-zinc-800 text-emerald-400 font-semibold"
                   : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
-              Selesai
+              Sudah Kirim WA
             </button>
             <button
-              onClick={() => setStatusFilter("pending")}
-              className={`px-2.5 py-1 rounded transition-colors ${
-                statusFilter === "pending"
+              onClick={() => setStatusFilter("draft")}
+              className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
+                statusFilter === "draft"
                   ? "bg-zinc-800 text-amber-400 font-semibold"
                   : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
-              Pending
+              Draft (Memilih)
+            </button>
+            <button
+              onClick={() => setStatusFilter("pending")}
+              className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
+                statusFilter === "pending"
+                  ? "bg-zinc-800 text-zinc-300 font-semibold"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Belum Memilih
             </button>
           </div>
 
@@ -452,9 +462,15 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
                       </td>
 
                       <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                        {hasSelections ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Sudah Memilih
+                        {g.status === "completed" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            Sudah Kirim WA
+                          </span>
+                        ) : g.status === "draft" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            Draft (Memilih)
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700/50">
@@ -466,9 +482,11 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
                       <td className="py-3.5 px-3 text-center whitespace-nowrap font-mono text-xs">
                         <span
                           className={
-                            hasSelections
+                            g.status === "completed"
                               ? "text-emerald-400 font-semibold"
-                              : "text-zinc-500"
+                              : g.status === "draft"
+                                ? "text-amber-400 font-semibold"
+                                : "text-zinc-500"
                           }
                         >
                           {g.selectedFilenames.length} / {g.maxSelections}
@@ -635,11 +653,17 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
                         {detailModalItem.clientName}
                       </h3>
                       {detailModalItem.status === "completed" ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          Sudah Memilih
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                          Sudah Kirim WA
+                        </span>
+                      ) : detailModalItem.status === "draft" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                          Draft (Sedang Memilih)
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700/50">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700/50">
                           Belum Memilih
                         </span>
                       )}
@@ -789,6 +813,32 @@ export function DashboardTable({ initialGalleries }: DashboardTableProps) {
                       {detailModalItem.maxSelections} foto terpilih
                     </span>
                   </div>
+
+                  {detailModalItem.submittedAt ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <span className="text-zinc-400 font-mono text-[11px]">
+                        Waktu Kirim WA:
+                      </span>
+                      <span className="font-mono text-emerald-400 text-[11px]">
+                        {new Date(detailModalItem.submittedAt).toLocaleString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  ) : detailModalItem.status === "draft" ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <span className="text-zinc-400 font-mono text-[11px]">
+                        Status Pengiriman:
+                      </span>
+                      <span className="font-mono text-amber-400 text-[11px]">
+                        Tersinkron di galeri (belum kirim WA)
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Minimalist Expandable Template Chat Section */}
