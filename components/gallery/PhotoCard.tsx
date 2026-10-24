@@ -27,12 +27,16 @@ export function PhotoCard({
 
   // SVG placeholder when image link fails to load
   const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%2327272a"/><text x="50%" y="50%" fill="%23a1a1aa" font-family="sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle">${encodeURIComponent(
-    photo.name
+    photo.name,
   )}</text></svg>`;
 
   const handleError = () => {
     // If direct Google Drive thumbnail URL fails, try falling back to local server proxy route
-    if (currentSrc.startsWith("https://drive.google.com") && photo.id && !photo.id.startsWith("photo-")) {
+    if (
+      currentSrc.startsWith("https://drive.google.com") &&
+      photo.id &&
+      !photo.id.startsWith("photo-")
+    ) {
       setCurrentSrc(`/api/drive-image/${photo.id}`);
     } else {
       setImageError(true);
@@ -90,11 +94,13 @@ export function PhotoCard({
               ? "bg-emerald-500 text-white shadow-md scale-100"
               : "bg-black/40 text-white/70 backdrop-blur-md border border-white/20 hover:bg-black/60 hover:text-white"
           }`}
-          aria-label={isSelected ? `Deselect ${photo.name}` : `Select ${photo.name}`}
+          aria-label={
+            isSelected ? `Deselect ${photo.name}` : `Select ${photo.name}`
+          }
         >
           {isSelected ? (
             <svg
-              className="h-4 w-4 stroke-[3]"
+              className="h-4 w-4 stroke-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -137,7 +143,7 @@ export function PhotoCard({
         </button>
 
         {/* Bottom Filename Overlay */}
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2.5 pt-6 text-left pointer-events-none">
+        <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-2.5 pt-6 text-left pointer-events-none">
           <p className="truncate text-xs font-mono tracking-tight text-white/90">
             {photo.name}
           </p>
