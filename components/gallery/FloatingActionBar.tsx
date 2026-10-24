@@ -78,6 +78,25 @@ export function FloatingActionBar({
     setIsSending(true);
     try {
       const finalPhotos = await getAuthoritativePhotos();
+
+      // Record official submission in background so Dashboard updates status to "Sudah Kirim WA"
+      if (galleryId && finalPhotos.length > 0) {
+        try {
+          fetch("/api/selections/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              galleryId,
+              filenames: finalPhotos.map((p) => p.name),
+            }),
+          }).catch((err) => {
+            console.warn("[FloatingActionBar] Background submit log warning:", err);
+          });
+        } catch {
+          // non-blocking
+        }
+      }
+
       const url = generateWhatsAppLink({
         phone: whatsappNumber,
         clientName,
