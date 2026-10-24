@@ -157,7 +157,7 @@ export function FloatingActionBar({
 
           {/* Subtitle / Filenames peek */}
           {selectedNamesList.length > 0 ? (
-            <span className="text-[10px] text-zinc-500 font-mono truncate max-w-[120px] sm:max-w-[280px] mt-0.5">
+            <span className="text-[10px] text-zinc-500 font-mono truncate max-w-30 sm:max-w-70 mt-0.5">
               {selectedNamesList.slice(0, 2).join(", ")}
               {selectedNamesList.length > 2
                 ? ` +${selectedNamesList.length - 2}`
