@@ -10,7 +10,11 @@ export interface SharedSelection {
   selected_at: string;
 }
 
-export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+export type ConnectionStatus =
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "error";
 
 export type ToggleResult = {
   action: "selected" | "deselected" | "limit_reached";
@@ -32,7 +36,12 @@ interface UseSharedSelectionsReturn {
   /** Current count of selections */
   selectionCount: number;
   /** Toggle a photo selection (calls server API) */
-  toggleSelection: (photoId: string, photoName: string) => Promise<ToggleResult | null>;
+  toggleSelection: (
+    photoId: string,
+    photoName: string,
+  ) => Promise<ToggleResult | null>;
+  /** Reset all selection */
+  resetSelections: () => Promise<boolean>;
   /** Whether a toggle operation is currently in progress */
   isToggling: boolean;
   /** Realtime connection status */
@@ -45,7 +54,7 @@ interface UseSharedSelectionsReturn {
 
 /**
  * Custom hook that manages shared photo selections with Supabase Realtime sync.
- * 
+ *
  * Design decisions:
  * - Uses Postgres Changes (not Broadcast) because selections must be persisted
  *   and the table already has RLS policies. Postgres Changes automatically
@@ -59,8 +68,11 @@ export function useSharedSelections({
   maxSelections,
 }: UseSharedSelectionsOptions): UseSharedSelectionsReturn {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectedPhotos, setSelectedPhotos] = useState<Map<string, string>>(new Map());
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
+  const [selectedPhotos, setSelectedPhotos] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("connecting");
   const [lastError, setLastError] = useState<string | null>(null);
   const [isToggling, setIsToggling] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -84,9 +96,13 @@ export function useSharedSelections({
   // Fetch current selections from server
   const fetchSelections = useCallback(async () => {
     try {
-      const res = await fetch(`/api/selections/${encodeURIComponent(galleryId)}`);
+      const res = await fetch(
+        `/api/selections/${encodeURIComponent(galleryId)}`,
+      );
       if (!res.ok) {
-        console.warn(`[useSharedSelections] Selections endpoint returned HTTP ${res.status}`);
+        console.warn(
+          `[useSharedSelections] Selections endpoint returned HTTP ${res.status}`,
+        );
         if (mountedRef.current) {
           setIsLoaded(true);
         }
@@ -130,7 +146,9 @@ export function useSharedSelections({
       .on(
         "broadcast",
         { event: "selection_toggled" },
-        (payload: { payload: { action: string; photo_id: string; photo_name: string } }) => {
+        (payload: {
+          payload: { action: string; photo_id: string; photo_name: string };
+        }) => {
           if (!mountedRef.current) return;
           const { action, photo_id, photo_name } = payload.payload || {};
           if (!photo_id) return;
@@ -163,8 +181,13 @@ export function useSharedSelections({
               return next;
             });
           }
-        }
+        },
       )
+      .on("broadcast", { event: "selection_reset" }, () => {
+        if (!mountedRef.current) return;
+        setSelectedIds(new Set());
+        setSelectedPhotos(new Map());
+      })
       .on(
         "postgres_changes" as "system", // Type workaround for Supabase SDK
         {
@@ -173,7 +196,9 @@ export function useSharedSelections({
           table: "shared_selections",
           filter: `gallery_id=eq.${galleryId}`,
         } as Record<string, unknown>,
-        (payload: { new: { photo_id: string; photo_name: string; selected_at: string } }) => {
+        (payload: {
+          new: { photo_id: string; photo_name: string; selected_at: string };
+        }) => {
           if (!mountedRef.current) return;
           const { photo_id, photo_name } = payload.new || {};
           if (!photo_id) return;
@@ -194,7 +219,7 @@ export function useSharedSelections({
             next.set(photo_id, photo_name);
             return next;
           });
-        }
+        },
       )
       .on(
         "postgres_changes" as "system",
@@ -204,7 +229,9 @@ export function useSharedSelections({
           table: "shared_selections",
           filter: `gallery_id=eq.${galleryId}`,
         } as Record<string, unknown>,
-        (payload: { old: { id?: string; photo_id?: string; gallery_id?: string } }) => {
+        (payload: {
+          old: { id?: string; photo_id?: string; gallery_id?: string };
+        }) => {
           if (!mountedRef.current) return;
           const photo_id = payload.old?.photo_id;
 
@@ -230,7 +257,7 @@ export function useSharedSelections({
             next.delete(photo_id);
             return next;
           });
-        }
+        },
       )
       .subscribe((status: string) => {
         if (!mountedRef.current) return;
@@ -263,7 +290,10 @@ export function useSharedSelections({
 
   // Toggle selection via server API with optimistic update
   const toggleSelection = useCallback(
-    async (photoId: string, photoName: string): Promise<ToggleResult | null> => {
+    async (
+      photoId: string,
+      photoName: string,
+    ): Promise<ToggleResult | null> => {
       if (isToggling) return null;
 
       const currentlySelected = selectedIds.has(photoId);
@@ -318,7 +348,10 @@ export function useSharedSelections({
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          console.warn(`[useSharedSelections] Toggle returned HTTP ${res.status}:`, errData);
+          console.warn(
+            `[useSharedSelections] Toggle returned HTTP ${res.status}:`,
+            errData,
+          );
           inFlightRef.current.delete(photoId);
 
           // Revert optimistic update
@@ -363,7 +396,10 @@ export function useSharedSelections({
         }
 
         // Broadcast to other open devices on the channel immediately
-        if (channelRef.current && (result.action === "selected" || result.action === "deselected")) {
+        if (
+          channelRef.current &&
+          (result.action === "selected" || result.action === "deselected")
+        ) {
           channelRef.current.send({
             type: "broadcast",
             event: "selection_toggled",
@@ -411,14 +447,45 @@ export function useSharedSelections({
         setIsToggling(false);
       }
     },
-    [galleryId, selectedIds, maxSelections, isToggling]
+    [galleryId, selectedIds, maxSelections, isToggling],
   );
+
+  const resetSelections = useCallback(async (): Promise<boolean> => {
+    const previousIds = new Set(selectedIds);
+    const previousPhotos = new Map(selectedPhotos);
+
+    setSelectedIds(new Set());
+    setSelectedPhotos(new Map());
+
+    try {
+      const res = await fetch(
+        `/api/selections/${encodeURIComponent(galleryId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!res.ok) throw new Error("Gagal mereset");
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: "broadcast",
+          event: "selections_reset",
+          payload: {},
+        });
+      }
+      return true;
+    } catch (err) {
+      setSelectedIds(previousIds);
+      setSelectedPhotos(previousPhotos);
+      setLastError("Gagal Mereset Pilihan");
+      return false;
+    }
+  }, [galleryId, selectedIds, selectedPhotos]);
 
   return {
     selectedIds,
     selectedPhotos,
     selectionCount: selectedIds.size,
     toggleSelection,
+    resetSelections,
     isToggling,
     connectionStatus,
     lastError,

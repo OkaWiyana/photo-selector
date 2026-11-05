@@ -18,6 +18,7 @@ export function GalleryContainer({ gallery }: GalleryContainerProps) {
     selectedPhotos,
     selectionCount,
     toggleSelection,
+    resetSelections,
     isToggling,
     connectionStatus,
     lastError,
@@ -167,6 +168,7 @@ export function GalleryContainer({ gallery }: GalleryContainerProps) {
         maxSelections={gallery.maxSelections}
         whatsappNumber={gallery.whatsappNumber}
         clientName={gallery.clientName}
+        onReset={resetSelections}
       />
     </div>
   );
