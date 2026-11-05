@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseClient } from "@/lib/supabase/server";
+import {
+  getSupabaseAdminClient,
+  getSupabaseClient,
+} from "@/lib/supabase/server";
 import { MOCK_GALLERY } from "@/lib/data/mock-gallery";
 import {
+  clearMockSharedSelection,
   getGalleryFromStore,
   getMockSharedSelections,
 } from "@/lib/data/gallery-store";
+import { count } from "console";
 
 /**
  * GET /api/selections/[galleryId]
@@ -14,15 +19,12 @@ import {
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ galleryId: string }> }
+  { params }: { params: Promise<{ galleryId: string }> },
 ) {
   const { galleryId } = await params;
 
   if (!galleryId || typeof galleryId !== "string" || galleryId.length > 100) {
-    return NextResponse.json(
-      { error: "Invalid gallery ID" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid gallery ID" }, { status: 400 });
   }
 
   try {
@@ -32,7 +34,11 @@ export async function GET(
       clientName: string;
       whatsappNumber: string;
     } | null = null;
-    let selections: { photo_id: string; photo_name: string; selected_at: string }[] = [];
+    let selections: {
+      photo_id: string;
+      photo_name: string;
+      selected_at: string;
+    }[] = [];
 
     // 1. Try querying Supabase if available
     const supabase = getSupabaseClient();
@@ -63,7 +69,10 @@ export async function GET(
           }
         }
       } catch (dbErr) {
-        console.warn("[API] Supabase query error, checking fallback store:", dbErr);
+        console.warn(
+          "[API] Supabase query error, checking fallback store:",
+          dbErr,
+        );
       }
     }
 
@@ -86,10 +95,7 @@ export async function GET(
     }
 
     if (!galleryInfo) {
-      return NextResponse.json(
-        { error: "Gallery not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Gallery not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -103,7 +109,40 @@ export async function GET(
     console.error("[API] Unexpected error fetching selections:", err);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ galleryId: string }> },
+) {
+  const { galleryId } = await params;
+  if (!galleryId)
+    return NextResponse.json({ error: "Invalid gallery ID" }, { status: 400 });
+
+  if (
+    galleryId === "demo" ||
+    galleryId === "sample" ||
+    getGalleryFromStore(galleryId)
+  ) {
+    clearMockSharedSelection(galleryId);
+    return NextResponse.json({ success: true, count: 0 });
+  }
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase)
+    return NextResponse.json({ error: "Database Error" }, { status: 503 });
+
+  const { error } = await supabase
+    .from("shared_selections")
+    .delete()
+    .eq("gallery_id", galleryId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ sucsses: true, count: 0 });
 }

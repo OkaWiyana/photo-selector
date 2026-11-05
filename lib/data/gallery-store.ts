@@ -36,14 +36,19 @@ export function getAllGalleriesFromStore(): Gallery[] {
   return Array.from(globalGalleriesStore.values());
 }
 
-export function saveSelectionToStore(galleryId: string, selectedFilenames: string[]): void {
+export function saveSelectionToStore(
+  galleryId: string,
+  selectedFilenames: string[],
+): void {
   globalSelectionsStore.set(galleryId, {
     selectedFilenames,
     updatedAt: new Date().toISOString(),
   });
 }
 
-export function getSelectionFromStore(galleryId: string): InStoreSelection | undefined {
+export function getSelectionFromStore(
+  galleryId: string,
+): InStoreSelection | undefined {
   return globalSelectionsStore.get(galleryId);
 }
 
@@ -56,14 +61,22 @@ export function deleteGalleryFromStore(id: string): void {
   globalSelectionsStore.delete(id);
 }
 
-export function updateGalleryInStore(id: string, updates: Partial<Gallery>): boolean {
+export function updateGalleryInStore(
+  id: string,
+  updates: Partial<Gallery>,
+): boolean {
   const existing = globalGalleriesStore.get(id);
   if (!existing) return false;
   globalGalleriesStore.set(id, {
     ...existing,
     ...updates,
-    clientName: updates.clientName !== undefined ? updates.clientName : existing.clientName,
-    title: updates.clientName ? `${updates.clientName} Photo Proofing` : existing.title,
+    clientName:
+      updates.clientName !== undefined
+        ? updates.clientName
+        : existing.clientName,
+    title: updates.clientName
+      ? `${updates.clientName} Photo Proofing`
+      : existing.title,
   });
   return true;
 }
@@ -76,7 +89,9 @@ export interface MockSharedSelectionItem {
 
 const globalMockSharedSelections = new Map<string, MockSharedSelectionItem[]>();
 
-export function getMockSharedSelections(galleryId: string): MockSharedSelectionItem[] {
+export function getMockSharedSelections(
+  galleryId: string,
+): MockSharedSelectionItem[] {
   return globalMockSharedSelections.get(galleryId) || [];
 }
 
@@ -84,7 +99,7 @@ export function toggleMockSharedSelection(
   galleryId: string,
   photoId: string,
   photoName: string,
-  maxSelections: number
+  maxSelections: number,
 ): {
   action: "selected" | "deselected" | "limit_reached";
   photo_id: string;
@@ -133,3 +148,6 @@ export function toggleMockSharedSelection(
   };
 }
 
+export function clearMockSharedSelection(galleryId: string): void {
+  globalMockSharedSelections.delete(galleryId);
+}
